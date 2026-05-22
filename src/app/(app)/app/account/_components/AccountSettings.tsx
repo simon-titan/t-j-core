@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Text,
@@ -88,6 +88,15 @@ export function AccountSettings({ email, fullName }: Props) {
   const emailValid  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim());
   const emailSame   = newEmail.trim().toLowerCase() === email.toLowerCase();
   const canSaveEmail = emailValid && !emailSame && !savingEmail;
+
+  // Show success after returning from the email-change confirmation link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('email_changed') === '1') {
+      t.success('E-Mail-Adresse erfolgreich geändert');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   async function handleEmailSave() {
     if (!canSaveEmail) return;
