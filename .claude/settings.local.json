@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\" -Recurse -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize -Wrap)",
+      "Bash(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\" -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-Object Name)",
+      "Bash(cd D:\\\\T&J Consulting\\\\dev\\\\core-platform *)",
+      "Bash(dir D:\\\\T&J Consulting\\\\dev\\\\core-platform\\\\src\\\\lib *)",
+      "Bash(xargs ls -la)",
+      "Bash(Select-Object -First 30)",
+      "Bash(Format-Table FullName)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js\\)$\")",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(xargs grep -l \"onboarding\")",
+      "Bash(xargs grep -l \"Skeleton\\\\|Loading\\\\|Spinner\")",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\\\\src\" -Recurse -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\('D:\\\\T&J Consulting\\\\dev\\\\core-platform\\\\', ''\\) } | Sort-Object)",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\" -Recurse -Directory | Where-Object { $_.Name -eq \"supabase\" } | Select-Object -First 5)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs grep -l \"pitch\" -i)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\\\\design\" -Recurse -Force | ForEach-Object { $_.FullName })",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Copy-Item *)",
+      "Bash(ls -la \"D:\\\\\\\\T&J Consulting\\\\\\\\dev\\\\\\\\core-platform\")",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\T&J Consulting\\\\dev\\\\core-platform\\\\src\\\\app\\\\\\(app\\)\\\\app\\\\onboarding\\\\_components\" | Select-Object Name, @{Name='Type'; Expression={if \\($_.PSIsContainer\\) {'Directory'} else {'File'}}})",
+      "PowerShell(New-Item *)"
+    ]
+  }
+}

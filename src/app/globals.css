@@ -1,0 +1,276 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&display=swap');
+
+:root {
+  /* === COLORS === */
+  --ink:         #0E0E0C;
+  --paper:       #FCFCFD;
+  --frost:       #F8F8FA;
+  --mist:        #EEEEF1;
+  --mute:        #8B867E;
+  --forest-deep: #122620;
+  --forest:      #1F3A2E;
+  --glow:        #2D5443;
+  --leaf:        #4A7C5C;
+
+  /* === ALPHA VARIANTS === */
+  --forest-deep-90:  rgba(18, 38, 32, 0.90);
+  --forest-deep-70:  rgba(18, 38, 32, 0.70);
+  --forest-deep-50:  rgba(18, 38, 32, 0.50);
+  --forest-10:       rgba(31, 58, 46, 0.10);
+  --forest-06:       rgba(31, 58, 46, 0.06);
+  --glow-12:         rgba(45, 84, 67, 0.12);
+  --glow-08:         rgba(45, 84, 67, 0.08);
+  --leaf-20:         rgba(74, 124, 92, 0.20);
+  --leaf-12:         rgba(74, 124, 92, 0.12);
+  --leaf-08:         rgba(74, 124, 92, 0.08);
+  --ink-80:          rgba(14, 14, 12, 0.80);
+  --ink-60:          rgba(14, 14, 12, 0.60);
+  --ink-40:          rgba(14, 14, 12, 0.40);
+  --ink-10:          rgba(14, 14, 12, 0.10);
+  --ink-06:          rgba(14, 14, 12, 0.06);
+  --ink-04:          rgba(14, 14, 12, 0.04);
+  --paper-90:        rgba(252, 252, 253, 0.90);
+  --paper-70:        rgba(252, 252, 253, 0.70);
+  --paper-50:        rgba(252, 252, 253, 0.50);
+  --paper-20:        rgba(252, 252, 253, 0.20);
+
+  /* === GRADIENTS === */
+  --gradient-forest-hero:        linear-gradient(135deg, #122620 0%, #1F3A2E 55%, #2D5443 100%);
+  --gradient-forest-card:        linear-gradient(180deg, #1F3A2E 0%, #122620 100%);
+  --gradient-forest-spotlight:   radial-gradient(ellipse 80% 60% at 50% 0%, #2D5443 0%, #1F3A2E 40%, #122620 100%);
+  --gradient-forest-vignette:    radial-gradient(ellipse 120% 80% at 30% 50%, #1F3A2E 0%, #122620 60%, #0E0E0C 100%);
+  --gradient-forest-cinemascope: linear-gradient(180deg, #0E0E0C 0%, #122620 30%, #1F3A2E 60%, #122620 85%, #0E0E0C 100%);
+  --gradient-forest-overlay:     linear-gradient(180deg, transparent 0%, rgba(18,38,32,0.70) 60%, rgba(18,38,32,0.95) 100%);
+  --gradient-forest-text-mask:   linear-gradient(135deg, #4A7C5C 0%, #2D5443 50%, #1F3A2E 100%);
+  --gradient-paper-wash:         linear-gradient(180deg, #FCFCFD 0%, #F8F8FA 100%);
+  --gradient-mist-fade:          linear-gradient(180deg, #FCFCFD 0%, #EEEEF1 100%);
+  --gradient-frost-card:         linear-gradient(180deg, #FCFCFD 0%, #F8F8FA 100%);
+  --gradient-ink-premium:        linear-gradient(135deg, #0E0E0C 0%, #122620 100%);
+  --gradient-ink-fade:           linear-gradient(180deg, #0E0E0C 0%, #122620 100%);
+  --gradient-leaf-glow:          linear-gradient(135deg, #2D5443 0%, #4A7C5C 100%);
+  --gradient-leaf-subtle:        linear-gradient(135deg, rgba(45,84,67,0.06) 0%, rgba(74,124,92,0.06) 100%);
+  --gradient-leaf-radial:        radial-gradient(circle at 50% 50%, rgba(74,124,92,0.15) 0%, transparent 70%);
+  --gradient-leaf-shine:         linear-gradient(105deg, transparent 40%, rgba(74,124,92,0.18) 50%, transparent 60%);
+  --gradient-hover-glow:         radial-gradient(circle at 50% 0%, rgba(74,124,92,0.08) 0%, transparent 60%);
+  --gradient-speed-lines:        linear-gradient(90deg, transparent 0%, rgba(74,124,92,0.12) 50%, transparent 100%);
+  --gradient-scrim-bottom:       linear-gradient(180deg, transparent 40%, rgba(14,14,12,0.85) 100%);
+
+  /* === SPACING (4px grid) === */
+  --space-1:  2px;
+  --space-2:  4px;
+  --space-3:  8px;
+  --space-4:  12px;
+  --space-5:  16px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  48px;
+  --space-9:  64px;
+  --space-10: 96px;
+  --space-11: 128px;
+
+  /* === RADII === */
+  --radius-1:    2px;
+  --radius-2:    4px;
+  --radius-3:    8px;
+  --radius-4:    14px;
+  --radius-5:    20px;
+  --radius-full: 9999px;
+
+  /* === SHADOWS === */
+  --shadow-1:      0 1px 2px rgba(14,14,12,0.04), 0 1px 1px rgba(14,14,12,0.03);
+  --shadow-2:      0 4px 8px rgba(14,14,12,0.06), 0 2px 4px rgba(14,14,12,0.04);
+  --shadow-3:      0 12px 24px rgba(14,14,12,0.08), 0 4px 8px rgba(14,14,12,0.05);
+  --shadow-4:      0 24px 48px rgba(14,14,12,0.10), 0 8px 16px rgba(14,14,12,0.06);
+  --shadow-cool-2: 0 4px 8px rgba(18,38,32,0.08), 0 2px 4px rgba(18,38,32,0.05);
+  --shadow-cool-3: 0 12px 24px rgba(18,38,32,0.10), 0 4px 8px rgba(18,38,32,0.07);
+
+  /* === TYPOGRAPHY === */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans:    'Geist Sans', system-ui, sans-serif;
+  --font-mono:    'Geist Mono', 'JetBrains Mono', monospace;
+
+  /* === TYPE SCALE === */
+  --size-hero:       clamp(64px, 9vw, 132px);
+  --size-h1:         clamp(36px, 5vw, 64px);
+  --size-h2:         clamp(26px, 3.5vw, 44px);
+  --size-h3:         clamp(20px, 2.5vw, 28px);
+  --size-stat:       clamp(96px, 15vw, 240px);
+  --size-pull-quote: clamp(22px, 3vw, 38px);
+
+  /* === MOTION === */
+  --ease-default:       cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-editorial:     cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-cartoon:       cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:      120ms;
+  --duration-base:      200ms;
+  --duration-slow:      400ms;
+  --duration-cinematic: 800ms;
+
+  /* === LAYOUT === */
+  --nav-height:        64px;
+  --sidebar-width:     240px;
+  --sidebar-collapsed: 64px;
+  --content-max-width: 1280px;
+  --module-max-width:  860px;
+  --admin-max-width:   1440px;
+  --page-padding-x:    32px;
+  --page-padding-x-sm: 20px;
+
+  /* === PLATFORM DARK TOKENS === */
+  --platform-bg:           #0E0E0C;
+  --platform-surface:      #141614;
+  --platform-surface-2:    #1A1C1A;
+  --platform-border:       rgba(255, 255, 255, 0.07);
+  --platform-border-strong:rgba(255, 255, 255, 0.14);
+  --platform-text:         #F4F4F4;
+  --platform-text-muted:   #7A7A7A;
+}
+
+/* === RESET & BASE === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+::selection {
+  background: rgba(74, 124, 92, 0.20);
+  color: #0E0E0C;
+}
+
+/* === TYPOGRAPHY CLASSES === */
+.t-display { font-family: var(--font-display); font-size: clamp(72px, 9vw, 132px); line-height: 0.95; letter-spacing: -0.04em; }
+.t-h1      { font-family: var(--font-display); font-size: clamp(40px, 5vw, 64px);  line-height: 1.05; letter-spacing: -0.03em; }
+.t-h2      { font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 44px); line-height: 1.1; letter-spacing: -0.025em; }
+.t-h3      { font-family: var(--font-display); font-size: clamp(22px, 2.5vw, 28px); line-height: 1.2; letter-spacing: -0.015em; }
+.t-h4      { font-family: var(--font-sans);    font-size: 20px; line-height: 1.3;  letter-spacing: -0.005em; font-weight: 500; }
+.t-body    { font-family: var(--font-sans);    font-size: 17px; line-height: 1.6;  letter-spacing: 0; }
+.t-sm      { font-family: var(--font-sans);    font-size: 14px; line-height: 1.5;  letter-spacing: 0; }
+.t-xs      { font-family: var(--font-mono);    font-size: 12px; line-height: 1.4;  letter-spacing: 0.02em; }
+
+.label-kicker {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.label-kicker::before { content: '—'; font-size: 0.9em; letter-spacing: 0; }
+.label-kicker--light  { color: rgba(252, 252, 253, 0.50); }
+
+/* === BUTTON BASE === */
+.btn {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 12px 20px;
+  border-radius: var(--radius-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--duration-base) var(--ease-default);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  text-decoration: none;
+}
+.btn:active { transform: scale(0.97); }
+
+/* Speed Lines Easter Egg — Primary Button */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-speed-lines);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-default);
+}
+.btn-primary:hover::before {
+  opacity: 1;
+  animation: speed-lines 600ms var(--ease-cartoon) forwards;
+}
+@keyframes speed-lines {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Chase Trail Animation */
+@keyframes chase {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Follow-Up dot pulse — overdue / due today */
+@keyframes dot-pulse-anim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+.dot-pulse {
+  animation: dot-pulse-anim 1.4s ease-in-out infinite;
+}
+
+/* === AUTH — Glassmorphism Card (white) === */
+.auth-glass-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(252, 252, 253, 0.88);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.80);
+  border-bottom-color: rgba(14, 14, 12, 0.07);
+  border-right-color: rgba(14, 14, 12, 0.05);
+  border-radius: var(--radius-5);
+  box-shadow:
+    0 24px 48px rgba(14, 14, 12, 0.22),
+    0 6px 16px rgba(14, 14, 12, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: var(--space-8);
+  animation: auth-card-in 0.60s var(--ease-editorial) both;
+}
+
+@keyframes auth-card-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Chase Trail in Auth */
+.auth-chase-trail {
+  background: var(--mist);
+}
+.auth-chase-trail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, var(--leaf) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: chase 0.9s var(--ease-editorial) 0.45s both;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
