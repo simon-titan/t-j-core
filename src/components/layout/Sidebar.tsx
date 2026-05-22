@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Building2, Users, Settings,
   Send, UserCheck, Calendar, RotateCcw, Home,
-  ChevronLeft, KanbanSquare, BookOpen, CalendarCheck, Lock,
+  ChevronLeft, KanbanSquare, BookOpen, CalendarCheck, Lock, X,
 } from 'lucide-react';
 import type { UserRole } from '@/lib/types/database';
 
@@ -77,18 +78,22 @@ const NAV_BY_ROLE: Record<UserRole, NavSection[]> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 interface Props {
-  role:        UserRole;
-  isCollapsed: boolean;
-  onToggle:    () => void;
+  role:          UserRole;
+  isCollapsed:   boolean;
+  onToggle:      () => void;
+  isMobile:      boolean;
+  isMobileOpen:  boolean;
+  onMobileClose: () => void;
 }
 
 const MotionNav  = motion(Box);
 const MotionSpan = motion.span;
 
-export function Sidebar({ role, isCollapsed, onToggle }: Props) {
-  const pathname   = usePathname();
-  const sections   = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.member;
-  const sidebarW   = isCollapsed ? 64 : 240;
+export function Sidebar({ role, isCollapsed, onToggle, isMobile, isMobileOpen, onMobileClose }: Props) {
+  const pathname        = usePathname();
+  const sections        = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.member;
+  const sidebarW        = isCollapsed ? 64 : 240;
+  const isFirstRender   = useRef(true);
 
   function isActive(href: string) {
     if (href === '/admin' || href === '/dashboard' || href === '/app') {
@@ -97,6 +102,163 @@ export function Sidebar({ role, isCollapsed, onToggle }: Props) {
     return pathname.startsWith(href);
   }
 
+  // Auto-close mobile drawer on route change
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (isMobile && isMobileOpen) onMobileClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // ── Mobile drawer ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    const navContent = (
+      <>
+        {/* Logo / Brand */}
+        <Box
+          h="64px"
+          px="12px"
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          borderBottom="1px solid"
+          borderColor="app-border"
+          flexShrink={0}
+        >
+          <Box display="flex" alignItems="center" gap="10px">
+            <Box w="28px" h="28px" borderRadius="var(--radius-2)" overflow="hidden" flexShrink={0}>
+              <Image
+                src="/logo-tj-white.png"
+                alt="T&J"
+                width={28}
+                height={28}
+                style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+              />
+            </Box>
+            <span style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--ink)',
+              letterSpacing: '-0.01em',
+            }}>
+              T&J CRM
+            </span>
+          </Box>
+
+          {/* Close button */}
+          <Box
+            as="button"
+            onClick={onMobileClose}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            w="32px"
+            h="32px"
+            borderRadius="var(--radius-3)"
+            color="app-text-muted"
+            bg="transparent"
+            cursor="pointer"
+            border="none"
+            transition="all 120ms"
+            _hover={{ bg: 'var(--ink-04)', color: 'var(--ink)' }}
+            aria-label="Navigation schließen"
+          >
+            <X size={16} strokeWidth={1.5} />
+          </Box>
+        </Box>
+
+        {/* Nav Sections */}
+        <Box flex={1} overflowY="auto" py="8px" px="8px">
+          {sections.map((section, si) => (
+            <Box key={si} mb={2}>
+              {section.label && (
+                <Text
+                  fontFamily="var(--font-mono)"
+                  fontSize="10px"
+                  fontWeight={500}
+                  letterSpacing="0.10em"
+                  textTransform="uppercase"
+                  color="app-border"
+                  px="12px"
+                  pt="12px"
+                  pb="4px"
+                >
+                  {section.label}
+                </Text>
+              )}
+              {section.items.map(item => (
+                <NavItemRow
+                  key={item.href}
+                  item={item}
+                  active={isActive(item.href)}
+                  collapsed={false}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+      </>
+    );
+
+    return (
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={onMobileClose}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                top: 'var(--banner-height, 36px)',
+                background: 'rgba(14,14,12,0.50)',
+                backdropFilter: 'blur(2px)',
+                zIndex: 29,
+              }}
+            />
+
+            {/* Drawer */}
+            <motion.nav
+              key="mobile-drawer"
+              initial={{ x: -240 }}
+              animate={{ x: 0 }}
+              exit={{ x: -240 }}
+              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+              style={{
+                position: 'fixed',
+                left: 0,
+                top: 'var(--banner-height, 36px)',
+                height: 'calc(100vh - var(--banner-height, 36px))',
+                width: '240px',
+                display: 'flex',
+                flexDirection: 'column',
+                zIndex: 30,
+              }}
+            >
+              <Box
+                h="100%"
+                bg="surface"
+                borderRight="1px solid"
+                borderColor="app-border"
+                display="flex"
+                flexDir="column"
+                overflow="hidden"
+              >
+                {navContent}
+              </Box>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // ── Desktop sidebar ────────────────────────────────────────────────────────
   return (
     <MotionNav
       as="nav"
@@ -168,7 +330,6 @@ export function Sidebar({ role, isCollapsed, onToggle }: Props) {
       <Box flex={1} overflowY="auto" py="8px" px="8px">
         {sections.map((section, si) => (
           <Box key={si} mb={2}>
-            {/* Section label — hidden when collapsed */}
             <AnimatePresence>
               {section.label && !isCollapsed && (
                 <motion.div
@@ -220,7 +381,7 @@ export function Sidebar({ role, isCollapsed, onToggle }: Props) {
           alignItems="center"
           justifyContent={isCollapsed ? 'center' : 'flex-start'}
           w="100%"
-          h="36px"
+          h="40px"
           px={isCollapsed ? 0 : '12px'}
           borderRadius="var(--radius-3)"
           color="app-text-muted"
@@ -264,7 +425,7 @@ function NavItemRow({
         alignItems="center"
         justifyContent={collapsed ? 'center' : 'flex-start'}
         gap="10px"
-        h="40px"
+        h="44px"
         px={collapsed ? 0 : '12px'}
         borderRadius="var(--radius-3)"
         color="var(--mist)"
@@ -336,7 +497,7 @@ function NavItemRow({
       alignItems="center"
       justifyContent={collapsed ? 'center' : 'flex-start'}
       gap="10px"
-      h="40px"
+      h="44px"
       px={collapsed ? 0 : '12px'}
       borderRadius="var(--radius-3)"
       color={active ? 'var(--paper)' : 'var(--mute)'}

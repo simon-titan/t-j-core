@@ -40,8 +40,11 @@ interface Config {
 function buildConstraints(side: Side): Constraints {
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 900;
+  const bannerH = typeof document !== 'undefined'
+    ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--banner-height') || '36', 10)
+    : 36;
   const startX = side === 'right' ? vw - CARD_W - 28 : 28;
-  const startY = 28;
+  const startY = bannerH + 8;
   return {
     top:    -startY,
     left:   -startX,
@@ -73,8 +76,8 @@ export function FunnyCard() {
 
   const positionStyle: React.CSSProperties =
     config.side === 'right'
-      ? { position: 'fixed', top: 28, right: 28, zIndex: 50 }
-      : { position: 'fixed', top: 28, left: 28, zIndex: 50 };
+      ? { position: 'fixed', top: 'calc(var(--banner-height, 36px) + 8px)', right: 28, zIndex: 50 }
+      : { position: 'fixed', top: 'calc(var(--banner-height, 36px) + 8px)', left: 28, zIndex: 50 };
 
   return (
     <motion.div

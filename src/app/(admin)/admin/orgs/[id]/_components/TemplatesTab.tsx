@@ -139,10 +139,12 @@ export function TemplatesTab({ orgId, userId, templates: initial }: Props) {
 
       {/* Template list */}
       <Box border="1px solid var(--mist)" borderRadius="var(--radius-3)" overflow="hidden" bg="var(--paper)">
+        <Box overflowX="auto">
         {/* Head */}
         <Box
           display="grid"
           gridTemplateColumns="1fr 160px 160px 80px 60px"
+          minW="520px"
           px={5}
           py={3}
           bg="var(--frost)"
@@ -175,6 +177,7 @@ export function TemplatesTab({ orgId, userId, templates: initial }: Props) {
               key={t.id}
               display="grid"
               gridTemplateColumns="1fr 160px 160px 80px 60px"
+              minW="520px"
               px={5}
               py={3}
               borderBottom={i < templates.length - 1 ? '1px solid var(--mist)' : undefined}
@@ -239,6 +242,7 @@ export function TemplatesTab({ orgId, userId, templates: initial }: Props) {
             </Box>
           ))
         )}
+        </Box>
       </Box>
 
       {/* Template Modal */}

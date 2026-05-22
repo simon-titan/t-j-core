@@ -30,10 +30,12 @@ export function AdminMetricsTable({ rows }: Props) {
       overflow="hidden"
       bg="var(--paper)"
     >
+      <Box overflowX="auto">
       {/* Table head */}
       <Box
         display="grid"
         gridTemplateColumns="2fr 100px 80px 80px 100px 80px 80px"
+        minW="700px"
         gap={0}
         px={6}
         py={3}
@@ -73,6 +75,7 @@ export function AdminMetricsTable({ rows }: Props) {
               key={row.id}
               display="grid"
               gridTemplateColumns="2fr 100px 80px 80px 100px 80px 80px"
+              minW="700px"
               gap={0}
               px={6}
               py={4}
@@ -168,6 +171,7 @@ export function AdminMetricsTable({ rows }: Props) {
           );
         })
       )}
+      </Box>
     </Box>
   );
 }

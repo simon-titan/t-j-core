@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box } from '@chakra-ui/react';
+import { Box, useBreakpointValue } from '@chakra-ui/react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BetaBanner } from '@/components/ui/BetaBanner';
@@ -21,10 +21,12 @@ interface Props {
 }
 
 export function AppShell({ role, orgName, orgLogoUrl, userId, fullName, children }: Props) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mounted, setMounted]         = useState(false);
+  const [isCollapsed, setIsCollapsed]     = useState(false);
+  const [isMobileOpen, setIsMobileOpen]   = useState(false);
+  const [mounted, setMounted]             = useState(false);
 
-  // Read persisted state after mount (avoid SSR mismatch)
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
+
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     if (stored === 'true') setIsCollapsed(true);
@@ -33,15 +35,21 @@ export function AppShell({ role, orgName, orgLogoUrl, userId, fullName, children
 
   const sidebarWidth = isCollapsed ? 64 : 240;
 
-  // Expose layout dimensions as CSS variables for fixed-position children
   useEffect(() => {
-    document.documentElement.style.setProperty('--current-sidebar-width', `${sidebarWidth}px`);
-  }, [sidebarWidth]);
+    document.documentElement.style.setProperty(
+      '--current-sidebar-width',
+      isMobile ? '0px' : `${sidebarWidth}px`,
+    );
+  }, [sidebarWidth, isMobile]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--banner-height', `${BANNER_HEIGHT}px`);
     document.documentElement.style.setProperty('--nav-height', `${BANNER_HEIGHT + 64}px`);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) setIsMobileOpen(false);
+  }, [isMobile]);
 
   function handleToggle() {
     setIsCollapsed(prev => {
@@ -51,25 +59,38 @@ export function AppShell({ role, orgName, orgLogoUrl, userId, fullName, children
     });
   }
 
-  // Avoid layout flash before localStorage is read
   if (!mounted) return null;
 
   return (
     <Box display="flex" minH="100vh" bg="app-bg" pt={`${BANNER_HEIGHT}px`}>
       <BetaBanner />
+
+      {/* Mobile backdrop */}
+      {isMobile && isMobileOpen && (
+        <Box
+          position="fixed"
+          inset={0}
+          bg="rgba(0,0,0,0.45)"
+          zIndex={19}
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
       <Sidebar
         role={role}
-        isCollapsed={isCollapsed}
+        isCollapsed={isMobile ? false : isCollapsed}
         onToggle={handleToggle}
+        isMobile={isMobile}
+        isMobileOpen={isMobileOpen}
+        onMobileClose={() => setIsMobileOpen(false)}
       />
 
-      {/* Main content area — shifts right as sidebar expands */}
       <Box
         flex={1}
         display="flex"
         flexDir="column"
         minH={`calc(100vh - ${BANNER_HEIGHT}px)`}
-        ml={`${sidebarWidth}px`}
+        ml={isMobile ? 0 : `${sidebarWidth}px`}
         transition="margin-left 0.25s cubic-bezier(0.4,0,0.2,1)"
       >
         <Topbar
@@ -78,7 +99,8 @@ export function AppShell({ role, orgName, orgLogoUrl, userId, fullName, children
           userId={userId}
           fullName={fullName}
           role={role}
-          sidebarWidth={sidebarWidth}
+          sidebarWidth={isMobile ? 0 : sidebarWidth}
+          onMobileMenuOpen={() => setIsMobileOpen(true)}
         />
 
         <Box

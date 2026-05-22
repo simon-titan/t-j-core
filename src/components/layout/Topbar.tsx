@@ -2,20 +2,21 @@
 
 import Image from 'next/image';
 import { Box, HStack, Text, IconButton, Tooltip, useColorMode } from '@chakra-ui/react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Menu as MenuIcon } from 'lucide-react';
 import { NotificationBell } from '@/components/ui/NotificationBell';
 import { UserMenu } from '@/components/ui/UserMenu';
 
 interface Props {
-  orgName:     string;
-  orgLogoUrl?: string | null;
-  userId:      string;
-  fullName:    string | null;
-  role:        string;
-  sidebarWidth: number;
+  orgName:            string;
+  orgLogoUrl?:        string | null;
+  userId:             string;
+  fullName:           string | null;
+  role:               string;
+  sidebarWidth:       number;
+  onMobileMenuOpen:   () => void;
 }
 
-export function Topbar({ orgName, orgLogoUrl, userId, fullName, role, sidebarWidth }: Props) {
+export function Topbar({ orgName, orgLogoUrl, userId, fullName, role, onMobileMenuOpen }: Props) {
   const { colorMode, toggleColorMode } = useColorMode();
 
   return (
@@ -35,8 +36,19 @@ export function Topbar({ orgName, orgLogoUrl, userId, fullName, role, sidebarWid
       justifyContent="space-between"
       flexShrink={0}
     >
-      {/* Left: T&J branding × Org branding */}
+      {/* Left: Hamburger (mobile only) + T&J branding × Org branding */}
       <HStack spacing={0} gap="8px" align="center" minW={0} overflow="hidden">
+        {/* Hamburger — visible only on mobile */}
+        <IconButton
+          aria-label="Navigation öffnen"
+          variant="icon"
+          display={{ base: 'flex', md: 'none' }}
+          onClick={onMobileMenuOpen}
+          icon={<MenuIcon size={20} strokeWidth={1.5} />}
+          flexShrink={0}
+          mr="4px"
+        />
+
         {/* T&J Logo */}
         <Box
           borderRadius="4px"
@@ -64,6 +76,7 @@ export function Topbar({ orgName, orgLogoUrl, userId, fullName, role, sidebarWid
           letterSpacing="-0.01em"
           flexShrink={0}
           noOfLines={1}
+          display={{ base: 'none', sm: 'block' }}
         >
           T&J Consulting
         </Text>
@@ -78,6 +91,7 @@ export function Topbar({ orgName, orgLogoUrl, userId, fullName, role, sidebarWid
           flexShrink={0}
           opacity={0.5}
           mx="2px"
+          display={{ base: 'none', sm: 'block' }}
         >
           ×
         </Text>
