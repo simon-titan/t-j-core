@@ -71,7 +71,7 @@ export function PipelineStats({ leads }: Props) {
 
   return (
     <Box
-      px="var(--space-7)"
+      px={{ base: 'var(--space-4)', md: 'var(--space-7)' }}
       py="var(--space-3)"
       borderBottom="1px solid"
       borderBottomColor="var(--mist)"

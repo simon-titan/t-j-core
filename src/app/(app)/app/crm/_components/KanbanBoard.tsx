@@ -311,7 +311,7 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
       {/* ── Command Bar (dark) ── */}
       <Box
         bg="var(--forest-deep)"
-        px="var(--space-7)"
+        px={{ base: 'var(--space-4)', md: 'var(--space-7)' }}
         pt="var(--space-5)"
         pb="var(--space-5)"
         position="relative"
@@ -484,7 +484,7 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
                   minH={0}
                   pt="var(--space-5)"
                   pb="var(--space-5)"
-                  px="var(--space-7)"
+                  px={{ base: 'var(--space-3)', md: 'var(--space-7)' }}
                   sx={{
                     '&::-webkit-scrollbar': { height: '4px' },
                     '&::-webkit-scrollbar-track': { bg: 'var(--frost)' },
@@ -553,7 +553,7 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
           )}
 
           {viewMode === 'list' && (
-            <Box key="list-wrapper" h="100%" minH={0} pt="var(--space-5)" px="var(--space-7)" overflowY="auto">
+            <Box key="list-wrapper" h="100%" minH={0} pt="var(--space-5)" px={{ base: 'var(--space-3)', md: 'var(--space-7)' }} overflowY="auto">
               <ListView
                 leads={filteredLeads}
                 profiles={profiles}

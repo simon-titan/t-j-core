@@ -227,15 +227,17 @@ export function FilterBar({ filter, onFilterChange, profiles, allLeads }: Props)
           </InputGroup>
         </Box>
 
-        {/* Assignee */}
-        <MultiDropdown
-          label="Assignee"
-          icon={<Users size={13} />}
-          options={assigneeProfiles.map((p) => p.id)}
-          getLabel={(id) => assigneeProfiles.find((p) => p.id === id)?.full_name ?? id}
-          selected={filter.assignees}
-          onToggle={(v) => toggle('assignees', v)}
-        />
+        {/* Assignee — only for multi-member orgs */}
+        {profiles.length > 1 && (
+          <MultiDropdown
+            label="Assignee"
+            icon={<Users size={13} />}
+            options={assigneeProfiles.map((p) => p.id)}
+            getLabel={(id) => assigneeProfiles.find((p) => p.id === id)?.full_name ?? id}
+            selected={filter.assignees}
+            onToggle={(v) => toggle('assignees', v)}
+          />
+        )}
 
         {/* Meeting-Typ */}
         <MultiDropdown
