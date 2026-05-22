@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { Profile, OnboardingAnswer, OnboardingExample } from '@/lib/types/database';
+import type { Profile, OnboardingAnswer, OnboardingExample, UserPitchScript } from '@/lib/types/database';
 import type { SectionWithQuestions, AdminNoteWithAdmin, OrgMember } from '../_components/types';
 import { ModuleDetailClient } from './_components/ModuleDetailClient';
 
@@ -54,7 +54,7 @@ export default async function OnboardingModulePage({ params }: Props) {
   const isAdmin = profile.role === 'org_admin' || profile.role === 'super_admin';
 
   // Parallel fetches
-  const [answersRes, adminNotesRes, orgMembersRes, examplesRes] = await Promise.all([
+  const [answersRes, adminNotesRes, orgMembersRes, examplesRes, pitchScriptRes] = await Promise.all([
     allQuestionIds.length > 0
       ? supabase
           .from('onboarding_answers')
@@ -85,12 +85,20 @@ export default async function OnboardingModulePage({ params }: Props) {
       .eq('module_slug', params.slug)
       .order('order_index')
       .order('created_at'),
+
+    supabase
+      .from('user_pitch_scripts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('module_slug', params.slug)
+      .maybeSingle(),
   ]);
 
-  const initialAnswers  = (answersRes.data ?? [])   as OnboardingAnswer[];
-  const adminNotes      = (adminNotesRes.data ?? []) as AdminNoteWithAdmin[];
-  const orgMembers      = (orgMembersRes.data ?? []) as OrgMember[];
-  const examples        = (examplesRes.data ?? [])   as OnboardingExample[];
+  const initialAnswers  = (answersRes.data     ?? []) as OnboardingAnswer[];
+  const adminNotes      = (adminNotesRes.data   ?? []) as AdminNoteWithAdmin[];
+  const orgMembers      = (orgMembersRes.data   ?? []) as OrgMember[];
+  const examples        = (examplesRes.data     ?? []) as OnboardingExample[];
+  const initialPitch    = (pitchScriptRes.data  ?? null) as UserPitchScript | null;
 
   return (
     <ModuleDetailClient
@@ -103,6 +111,7 @@ export default async function OnboardingModulePage({ params }: Props) {
       orgId={profile.organization_id}
       isAdmin={isAdmin}
       examples={examples}
+      initialPitch={initialPitch?.content ?? ''}
     />
   );
 }

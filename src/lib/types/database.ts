@@ -241,6 +241,16 @@ export interface OnboardingExample {
   created_at:  string;
 }
 
+export interface UserPitchScript {
+  id:          string;
+  user_id:     string;
+  org_id:      string;
+  module_slug: string;
+  content:     string;
+  created_at:  string;
+  updated_at:  string;
+}
+
 type R = [];
 
 // Supabase Database type for generic client
@@ -265,6 +275,7 @@ export type Database = {
       onboarding_answers:     { Row: OnboardingAnswer;    Insert: Partial<OnboardingAnswer>;    Update: Partial<OnboardingAnswer>;    Relationships: R };
       onboarding_admin_notes: { Row: OnboardingAdminNote; Insert: Partial<OnboardingAdminNote>; Update: Partial<OnboardingAdminNote>; Relationships: R };
       onboarding_examples:    { Row: OnboardingExample;   Insert: Partial<OnboardingExample>;   Update: Partial<OnboardingExample>;   Relationships: R };
+      user_pitch_scripts:     { Row: UserPitchScript;     Insert: Partial<UserPitchScript>;     Update: Partial<UserPitchScript>;     Relationships: R };
     };
     Views:    { [_ in never]: never };
     Functions:{ [_ in never]: never };

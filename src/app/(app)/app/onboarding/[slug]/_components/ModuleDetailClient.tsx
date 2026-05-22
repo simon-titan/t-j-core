@@ -28,11 +28,12 @@ interface Props {
   orgId:          string;
   isAdmin:        boolean;
   examples:       OnboardingExample[];
+  initialPitch:   string;
 }
 
 export function ModuleDetailClient({
   module, sections, initialAnswers, adminNotes: initialAdminNotes,
-  orgMembers, userId, orgId, isAdmin, examples,
+  orgMembers, userId, orgId, isAdmin, examples, initialPitch,
 }: Props) {
   const router   = useRouter();
   const supabase = createClient();
@@ -53,6 +54,9 @@ export function ModuleDetailClient({
   const [adminNotes, setAdminNotes]         = useState<AdminNoteWithAdmin[]>(initialAdminNotes);
   const [isViewingOther, setIsViewingOther] = useState(false);
   const [otherAnswersMap, setOtherAnswersMap] = useState<Map<string, OnboardingAnswer>>(new Map());
+
+  const [pitchContent, setPitchContent] = useState(initialPitch);
+  const pitchTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const saveTimers    = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const saveStateTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -146,6 +150,36 @@ export function ModuleDetailClient({
 
   function handleNoteAdded(note: AdminNoteWithAdmin) {
     setAdminNotes((prev) => [note, ...prev]);
+  }
+
+  function handlePitchChange(value: string) {
+    setPitchContent(value);
+    setSaveState('saving');
+    clearTimeout(saveStateTimer.current);
+    clearTimeout(pitchTimer.current);
+
+    pitchTimer.current = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('user_pitch_scripts')
+          .upsert(
+            {
+              user_id:     userId,
+              org_id:      orgId,
+              module_slug: module.slug,
+              content:     value,
+              updated_at:  new Date().toISOString(),
+            },
+            { onConflict: 'user_id,module_slug' }
+          );
+        if (error) throw error;
+        setSaveState('saved');
+        saveStateTimer.current = setTimeout(() => setSaveState('idle'), 2000);
+      } catch {
+        setSaveState('error');
+        saveStateTimer.current = setTimeout(() => setSaveState('idle'), 3000);
+      }
+    }, 1000);
   }
 
   const displayAnswersMap = isViewingOther ? otherAnswersMap : answersMap;
@@ -388,6 +422,65 @@ export function ModuleDetailClient({
             </MotionBox>
           )}
         </AnimatePresence>
+
+        {/* ─── MEIN DIRECT PITCH ────────────────────────────────────────── */}
+        <Box mt="var(--space-10)" pt="var(--space-8)" borderTop="1px solid var(--mist)">
+          <Text
+            fontFamily="var(--font-mono)"
+            fontSize="10px"
+            fontWeight={500}
+            letterSpacing="0.14em"
+            textTransform="uppercase"
+            color="var(--leaf)"
+            mb="var(--space-4)"
+          >
+            — Mein Skript
+          </Text>
+          <Text
+            fontFamily="var(--font-display)"
+            fontStyle="italic"
+            fontSize="clamp(22px,3vw,32px)"
+            letterSpacing="-0.03em"
+            lineHeight={1.1}
+            color="var(--ink)"
+            mb="var(--space-3)"
+          >
+            Mein Direct Pitch
+          </Text>
+          <Text
+            fontFamily="var(--font-sans)"
+            fontSize="14px"
+            color="var(--mute)"
+            lineHeight={1.6}
+            mb="var(--space-5)"
+          >
+            Schreibe hier deinen fertigen Pitch auf. Er wird automatisch gespeichert.
+          </Text>
+          <textarea
+            value={pitchContent}
+            onChange={(e) => handlePitchChange(e.target.value)}
+            placeholder="Hallo [Name], ich bin Tom – wahrscheinlich der einzige …"
+            rows={12}
+            style={{
+              width:        '100%',
+              padding:      '14px 16px',
+              fontFamily:   'var(--font-sans)',
+              fontSize:     '14px',
+              lineHeight:   '1.75',
+              color:        'var(--ink)',
+              background:   'var(--paper)',
+              border:       '1px solid var(--mist)',
+              borderRadius: 'var(--radius-3)',
+              outline:      'none',
+              resize:       'vertical',
+              boxSizing:    'border-box',
+              transition:   'border-color 150ms ease',
+              whiteSpace:   'pre-wrap',
+            }}
+            onFocus={(e) => { e.target.style.borderColor = 'var(--forest)'; }}
+            onBlur={(e)  => { e.target.style.borderColor = 'var(--mist)'; }}
+          />
+        </Box>
 
         {/* ─── BEISPIELSKRIPTE VON T&J ──────────────────────────────────── */}
         {examples.length > 0 && (
