@@ -11,7 +11,7 @@ import {
   InputRightElement,
   IconButton,
 } from '@chakra-ui/react';
-import { Eye, EyeOff, KeyRound, User, Mail, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, User, Mail, CheckCircle2, Send } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { t } from '@/lib/toast';
 
@@ -80,7 +80,34 @@ function Section({
 export function AccountSettings({ email, fullName }: Props) {
   const supabase = createClient();
 
-  // Password form
+  // ── Email change ────────────────────────────────────────────────────────────
+  const [newEmail,      setNewEmail]      = useState('');
+  const [savingEmail,   setSavingEmail]   = useState(false);
+  const [emailSent,     setEmailSent]     = useState(false);
+
+  const emailValid  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim());
+  const emailSame   = newEmail.trim().toLowerCase() === email.toLowerCase();
+  const canSaveEmail = emailValid && !emailSame && !savingEmail;
+
+  async function handleEmailSave() {
+    if (!canSaveEmail) return;
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    setSavingEmail(false);
+    if (error) {
+      t.error(error.message ?? 'E-Mail konnte nicht geändert werden');
+      return;
+    }
+    setEmailSent(true);
+    setNewEmail('');
+    t.success('Bestätigungs-E-Mail wurde versendet');
+  }
+
+  function handleEmailKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') handleEmailSave();
+  }
+
+  // ── Password change ─────────────────────────────────────────────────────────
   const [newPw,     setNewPw]     = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [showNew,   setShowNew]   = useState(false);
@@ -139,6 +166,7 @@ export function AccountSettings({ email, fullName }: Props) {
       </Box>
 
       <VStack align="stretch" spacing="16px">
+
         {/* Account Info (read-only) */}
         <Section icon={<User size={14} strokeWidth={1.5} />} title="Konto-Informationen">
           <VStack align="stretch" spacing="16px">
@@ -158,7 +186,7 @@ export function AccountSettings({ email, fullName }: Props) {
               />
             </Box>
             <Box>
-              <FieldLabel>E-Mail</FieldLabel>
+              <FieldLabel>Aktuelle E-Mail</FieldLabel>
               <HStack spacing="8px">
                 <Box color="var(--mute)" flexShrink={0}>
                   <Mail size={14} strokeWidth={1.5} />
@@ -176,16 +204,120 @@ export function AccountSettings({ email, fullName }: Props) {
                   h="40px"
                 />
               </HStack>
-              <Text
-                fontFamily="var(--font-mono)"
-                fontSize="10px"
-                color="var(--mute)"
-                mt="6px"
-                letterSpacing="0.05em"
-              >
-                E-Mail-Adresse kann nur vom Admin geändert werden.
-              </Text>
             </Box>
+          </VStack>
+        </Section>
+
+        {/* Email Change */}
+        <Section icon={<Mail size={14} strokeWidth={1.5} />} title="E-Mail ändern">
+          <VStack align="stretch" spacing="16px">
+
+            {emailSent ? (
+              <HStack
+                spacing="10px"
+                bg="rgba(74,124,92,0.07)"
+                border="1px solid rgba(74,124,92,0.2)"
+                borderRadius="var(--radius-3)"
+                px="16px"
+                py="14px"
+              >
+                <CheckCircle2 size={16} strokeWidth={1.5} color="var(--forest)" />
+                <Box>
+                  <Text fontFamily="var(--font-sans)" fontSize="13px" fontWeight={500} color="var(--forest)">
+                    Bestätigungs-E-Mail versendet
+                  </Text>
+                  <Text fontFamily="var(--font-sans)" fontSize="12px" color="var(--mute)" mt="2px">
+                    Bitte prüfe dein Postfach und klicke den Bestätigungslink.
+                  </Text>
+                </Box>
+              </HStack>
+            ) : (
+              <Box>
+                <FieldLabel>Neue E-Mail-Adresse</FieldLabel>
+                <Input
+                  type="email"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  onKeyDown={handleEmailKeyDown}
+                  placeholder={email}
+                  bg="var(--paper)"
+                  border="1px solid"
+                  borderColor={newEmail && !emailValid ? 'rgba(239,68,68,0.50)' : 'var(--mist)'}
+                  borderRadius="var(--radius-2)"
+                  fontFamily="var(--font-sans)"
+                  fontSize="14px"
+                  color="var(--ink)"
+                  h="40px"
+                  _focus={{ borderColor: 'var(--forest)', boxShadow: 'none', outline: 'none' }}
+                  _placeholder={{ color: 'var(--mist)', fontSize: '13px' }}
+                />
+                {emailSame && newEmail.length > 0 && (
+                  <Text fontFamily="var(--font-sans)" fontSize="12px" color="#DC2626" mt="5px">
+                    Das ist bereits deine aktuelle E-Mail-Adresse.
+                  </Text>
+                )}
+              </Box>
+            )}
+
+            <HStack justify="space-between" align="center" pt="4px">
+              <Text
+                fontFamily="var(--font-sans)"
+                fontSize="12px"
+                color="var(--mute)"
+                maxW="320px"
+                lineHeight={1.5}
+              >
+                Du erhältst eine Bestätigungs-E-Mail an die neue Adresse.
+              </Text>
+
+              {!emailSent && (
+                <Box
+                  as="button"
+                  onClick={handleEmailSave}
+                  disabled={!canSaveEmail}
+                  display="inline-flex"
+                  alignItems="center"
+                  gap="6px"
+                  px="20px"
+                  py="9px"
+                  borderRadius="var(--radius-2)"
+                  bg={canSaveEmail ? 'var(--forest)' : 'var(--mist)'}
+                  color={canSaveEmail ? 'var(--paper)' : 'var(--mute)'}
+                  fontFamily="var(--font-sans)"
+                  fontSize="13px"
+                  fontWeight={600}
+                  cursor={canSaveEmail ? 'pointer' : 'not-allowed'}
+                  opacity={savingEmail ? 0.6 : 1}
+                  transition="all 150ms ease"
+                  _hover={canSaveEmail ? { bg: 'var(--leaf)' } : {}}
+                  border="none"
+                  flexShrink={0}
+                >
+                  <Send size={13} strokeWidth={1.8} />
+                  {savingEmail ? 'Wird gesendet…' : 'Bestätigung senden'}
+                </Box>
+              )}
+
+              {emailSent && (
+                <Box
+                  as="button"
+                  onClick={() => setEmailSent(false)}
+                  px="16px"
+                  py="9px"
+                  borderRadius="var(--radius-2)"
+                  border="1px solid var(--mist)"
+                  bg="transparent"
+                  color="var(--mute)"
+                  fontFamily="var(--font-sans)"
+                  fontSize="13px"
+                  cursor="pointer"
+                  transition="all 150ms ease"
+                  _hover={{ bg: 'var(--frost)', color: 'var(--ink)' }}
+                >
+                  Neue Adresse eingeben
+                </Box>
+              )}
+            </HStack>
           </VStack>
         </Section>
 
@@ -307,6 +439,7 @@ export function AccountSettings({ email, fullName }: Props) {
             </HStack>
           </VStack>
         </Section>
+
       </VStack>
     </Box>
   );
