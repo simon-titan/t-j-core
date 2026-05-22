@@ -24,7 +24,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Pure pass-through — no auth check needed
-  if (pathname.startsWith('/auth/callback')) {
+  if (
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/auth/set-password')
+  ) {
     return NextResponse.next();
   }
 

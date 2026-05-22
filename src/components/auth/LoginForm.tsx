@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FormControl, FormLabel,
@@ -34,6 +34,13 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+
+  // Redirect old invite links that land on /login with the invite hash
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('type=invite')) {
+      router.replace('/auth/set-password' + window.location.hash);
+    }
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

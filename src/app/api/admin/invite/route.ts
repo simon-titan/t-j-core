@@ -33,9 +33,13 @@ export async function POST(req: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
   const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
     email,
-    { data: { organization_id, role } }
+    {
+      data:       { organization_id, role },
+      redirectTo: `${appUrl}/auth/set-password`,
+    }
   );
 
   if (inviteErr) {
