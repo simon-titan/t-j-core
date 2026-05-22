@@ -234,7 +234,8 @@ export function UserPreviewClient({
         </Box>
 
         <Box border="1px solid var(--mist)" borderRadius="var(--radius-3)" overflow="hidden" bg="var(--paper)">
-          <Box display="grid" gridTemplateColumns="1fr 160px 100px 100px 100px" px={5} py={3} bg="var(--frost)" borderBottom="1px solid var(--mist)">
+          <Box overflowX="auto">
+          <Box display="grid" gridTemplateColumns="1fr 160px 100px 100px 100px" minW="560px" px={5} py={3} bg="var(--frost)" borderBottom="1px solid var(--mist)">
             {['Prospect', 'Template', 'Status', 'Gesendet', 'Antwort'].map(h => (
               <Text key={h} fontFamily="var(--font-mono)" fontSize="10px" fontWeight={500} letterSpacing="0.08em" textTransform="uppercase" color="var(--mute)">{h}</Text>
             ))}
@@ -248,7 +249,7 @@ export function UserPreviewClient({
             pitches.map((p, i) => {
               const pc = PITCH_COLORS[p.status] ?? PITCH_COLORS.sent;
               return (
-                <Box key={p.id} display="grid" gridTemplateColumns="1fr 160px 100px 100px 100px" px={5} py={3} borderBottom={i < pitches.length - 1 ? '1px solid var(--mist)' : undefined} alignItems="center">
+                <Box key={p.id} display="grid" gridTemplateColumns="1fr 160px 100px 100px 100px" minW="560px" px={5} py={3} borderBottom={i < pitches.length - 1 ? '1px solid var(--mist)' : undefined} alignItems="center">
                   <Box>
                     <Text fontFamily="var(--font-sans)" fontSize="13px" fontWeight={500} color="var(--ink)">
                       {p.prospects ? `${p.prospects.first_name} ${p.prospects.last_name}` : '—'}
@@ -263,6 +264,7 @@ export function UserPreviewClient({
               );
             })
           )}
+          </Box>
         </Box>
       </Box>
 
@@ -274,7 +276,8 @@ export function UserPreviewClient({
         </Box>
 
         <Box border="1px solid var(--mist)" borderRadius="var(--radius-3)" overflow="hidden" bg="var(--paper)">
-          <Box display="grid" gridTemplateColumns="1fr 120px 120px 120px" px={5} py={3} bg="var(--frost)" borderBottom="1px solid var(--mist)">
+          <Box overflowX="auto">
+          <Box display="grid" gridTemplateColumns="1fr 120px 120px 120px" minW="480px" px={5} py={3} bg="var(--frost)" borderBottom="1px solid var(--mist)">
             {['Prospect', 'Status', 'Deal-Wert', 'Aktualisiert'].map(h => (
               <Text key={h} fontFamily="var(--font-mono)" fontSize="10px" fontWeight={500} letterSpacing="0.08em" textTransform="uppercase" color="var(--mute)">{h}</Text>
             ))}
@@ -288,7 +291,7 @@ export function UserPreviewClient({
             leads.map((l, i) => {
               const lc = LEAD_COLORS[l.status] ?? LEAD_COLORS.new;
               return (
-                <Box key={l.id} display="grid" gridTemplateColumns="1fr 120px 120px 120px" px={5} py={3} borderBottom={i < leads.length - 1 ? '1px solid var(--mist)' : undefined} alignItems="center">
+                <Box key={l.id} display="grid" gridTemplateColumns="1fr 120px 120px 120px" minW="480px" px={5} py={3} borderBottom={i < leads.length - 1 ? '1px solid var(--mist)' : undefined} alignItems="center">
                   <Text fontFamily="var(--font-sans)" fontSize="13px" fontWeight={500} color="var(--ink)">
                     {l.prospects ? `${l.prospects.first_name} ${l.prospects.last_name}` : '—'}
                   </Text>
@@ -301,6 +304,7 @@ export function UserPreviewClient({
               );
             })
           )}
+          </Box>
         </Box>
       </Box>
 
