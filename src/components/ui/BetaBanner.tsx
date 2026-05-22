@@ -28,7 +28,7 @@ export function BetaBanner() {
         left={0}
         right={0}
         h="36px"
-        zIndex={40}
+        zIndex={21}
         bg="rgba(180,130,0,0.10)"
         borderBottom="1px solid rgba(180,130,0,0.22)"
         backdropFilter="blur(8px)"
