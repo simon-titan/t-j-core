@@ -6,6 +6,7 @@ import {
   Box, Text,
 } from '@chakra-ui/react';
 import { Settings, LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
@@ -71,7 +72,12 @@ export function UserMenu({ fullName, role }: Props) {
 
         <MenuDivider />
 
-        <MenuItem icon={<Settings size={14} strokeWidth={1.5} />} fontSize="14px">
+        <MenuItem
+          as={Link}
+          href="/app/account"
+          icon={<Settings size={14} strokeWidth={1.5} />}
+          fontSize="14px"
+        >
           Einstellungen
         </MenuItem>
 
