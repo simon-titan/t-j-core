@@ -87,7 +87,7 @@ export function KanbanColumn({
 
   return (
     <MotionBox
-      animate={{ width: isCollapsed ? '48px' : '300px' }}
+      animate={{ width: isCollapsed ? '48px' : '280px' }}
       transition={{ duration: 0.3, ease: [0.65, 0, 0.35, 1] }}
       style={{ flexShrink: 0 }}
       display="flex"

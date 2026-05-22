@@ -91,7 +91,7 @@ export function ListView({
   onSelectLead,
   onSelectAll,
 }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('days');
+  const [sortKey, setSortKey] = useState<SortKey>('nextAppt');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   function handleSort(k: SortKey) {
@@ -179,19 +179,23 @@ export function ListView({
               <Th px="12px" py="10px">
                 <SortHeader label="Status" sortKey="column" current={sortKey} dir={sortDir} onSort={handleSort} />
               </Th>
-              <Th px="12px" py="10px">
+              <Th px="12px" py="10px" display={{ base: 'none', md: 'table-cell' }}>
                 <SortHeader label="Meeting-Typ" sortKey="meetingType" current={sortKey} dir={sortDir} onSort={handleSort} />
               </Th>
               <Th px="12px" py="10px">
                 <SortHeader label="Nächster Termin" sortKey="nextAppt" current={sortKey} dir={sortDir} onSort={handleSort} />
               </Th>
-              <Th px="12px" py="10px" isNumeric>
+              <Th px="12px" py="10px" isNumeric display={{ base: 'none', md: 'table-cell' }}>
                 <SortHeader label="Deal €" sortKey="dealValue" current={sortKey} dir={sortDir} onSort={handleSort} />
               </Th>
-              <Th px="12px" py="10px">
-                <SortHeader label="Assignee" sortKey="name" current={sortKey} dir={sortDir} onSort={handleSort} />
-              </Th>
-              <Th px="12px" py="10px">
+              {profiles.length > 1 && (
+                <Th px="12px" py="10px">
+                  <Text fontFamily="var(--font-mono)" fontSize="10px" letterSpacing="0.10em" textTransform="uppercase" color="var(--mute)">
+                    Assignee
+                  </Text>
+                </Th>
+              )}
+              <Th px="12px" py="10px" display={{ base: 'none', md: 'table-cell' }}>
                 <SortHeader label="Tage" sortKey="days" current={sortKey} dir={sortDir} onSort={handleSort} />
               </Th>
               <Th px="12px" py="10px" w="80px">
@@ -287,7 +291,7 @@ export function ListView({
                   </Td>
 
                   {/* Meeting type */}
-                  <Td px="12px" py="10px">
+                  <Td px="12px" py="10px" display={{ base: 'none', md: 'table-cell' }}>
                     <Text fontFamily="var(--font-sans)" fontSize="12px" color="var(--mute)">
                       {lead.latestMeetingType ? MEETING_TYPE_LABELS[lead.latestMeetingType] : '—'}
                     </Text>
@@ -308,7 +312,7 @@ export function ListView({
                   </Td>
 
                   {/* Deal value */}
-                  <Td px="12px" py="10px" isNumeric>
+                  <Td px="12px" py="10px" isNumeric display={{ base: 'none', md: 'table-cell' }}>
                     {dealValue > 0 ? (
                       <HStack spacing="3px" justify="flex-end">
                         <Euro size={10} color="var(--forest)" />
@@ -322,14 +326,16 @@ export function ListView({
                   </Td>
 
                   {/* Assignee */}
-                  <Td px="12px" py="10px">
-                    <Text fontFamily="var(--font-sans)" fontSize="12px" color="var(--mute)" noOfLines={1}>
-                      {assignee?.full_name ?? '—'}
-                    </Text>
-                  </Td>
+                  {profiles.length > 1 && (
+                    <Td px="12px" py="10px">
+                      <Text fontFamily="var(--font-sans)" fontSize="12px" color="var(--mute)" noOfLines={1}>
+                        {assignee?.full_name ?? '—'}
+                      </Text>
+                    </Td>
+                  )}
 
                   {/* Days since contact */}
-                  <Td px="12px" py="10px">
+                  <Td px="12px" py="10px" display={{ base: 'none', md: 'table-cell' }}>
                     <Text
                       fontFamily="var(--font-mono)"
                       fontSize="12px"
@@ -385,7 +391,7 @@ export function ListView({
 
             {leads.length === 0 && (
               <Tr>
-                <Td colSpan={10} px="12px" py="48px" textAlign="center">
+                <Td colSpan={99} px="12px" py="48px" textAlign="center">
                   <Text fontFamily="var(--font-mono)" fontSize="11px" letterSpacing="0.08em" textTransform="uppercase" color="var(--mist)">
                     Keine Leads gefunden
                   </Text>
