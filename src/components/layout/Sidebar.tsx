@@ -30,8 +30,9 @@ const NAV_BY_ROLE: Record<UserRole, NavSection[]> = {
   super_admin: [
     {
       items: [
-        { href: '/admin',      label: 'Übersicht',      icon: LayoutDashboard },
-        { href: '/admin/orgs', label: 'Organisationen', icon: Building2 },
+        { href: '/admin',            label: 'Übersicht',      icon: LayoutDashboard },
+        { href: '/admin/orgs',       label: 'Organisationen', icon: Building2 },
+        { href: '/admin/onboarding', label: 'Onboarding',     icon: BookOpen },
       ],
     },
     {

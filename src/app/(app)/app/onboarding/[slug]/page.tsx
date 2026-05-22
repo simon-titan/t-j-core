@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { Profile, OnboardingAnswer } from '@/lib/types/database';
+import type { Profile, OnboardingAnswer, OnboardingExample } from '@/lib/types/database';
 import type { SectionWithQuestions, AdminNoteWithAdmin, OrgMember } from '../_components/types';
 import { ModuleDetailClient } from './_components/ModuleDetailClient';
 
@@ -54,7 +54,7 @@ export default async function OnboardingModulePage({ params }: Props) {
   const isAdmin = profile.role === 'org_admin' || profile.role === 'super_admin';
 
   // Parallel fetches
-  const [answersRes, adminNotesRes, orgMembersRes] = await Promise.all([
+  const [answersRes, adminNotesRes, orgMembersRes, examplesRes] = await Promise.all([
     allQuestionIds.length > 0
       ? supabase
           .from('onboarding_answers')
@@ -78,11 +78,19 @@ export default async function OnboardingModulePage({ params }: Props) {
           .select('id, full_name')
           .eq('organization_id', profile.organization_id)
       : Promise.resolve({ data: [] }),
+
+    supabase
+      .from('onboarding_examples')
+      .select('*')
+      .eq('module_slug', params.slug)
+      .order('order_index')
+      .order('created_at'),
   ]);
 
   const initialAnswers  = (answersRes.data ?? [])   as OnboardingAnswer[];
   const adminNotes      = (adminNotesRes.data ?? []) as AdminNoteWithAdmin[];
   const orgMembers      = (orgMembersRes.data ?? []) as OrgMember[];
+  const examples        = (examplesRes.data ?? [])   as OnboardingExample[];
 
   return (
     <ModuleDetailClient
@@ -94,6 +102,7 @@ export default async function OnboardingModulePage({ params }: Props) {
       userId={user.id}
       orgId={profile.organization_id}
       isAdmin={isAdmin}
+      examples={examples}
     />
   );
 }

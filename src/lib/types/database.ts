@@ -232,6 +232,15 @@ export interface OnboardingAdminNote {
   updated_at:     string;
 }
 
+export interface OnboardingExample {
+  id:          string;
+  module_slug: string;
+  title:       string | null;
+  content:     string;
+  order_index: number;
+  created_at:  string;
+}
+
 type R = [];
 
 // Supabase Database type for generic client
@@ -255,6 +264,7 @@ export type Database = {
       onboarding_questions:   { Row: OnboardingQuestion;  Insert: Partial<OnboardingQuestion>;  Update: Partial<OnboardingQuestion>;  Relationships: R };
       onboarding_answers:     { Row: OnboardingAnswer;    Insert: Partial<OnboardingAnswer>;    Update: Partial<OnboardingAnswer>;    Relationships: R };
       onboarding_admin_notes: { Row: OnboardingAdminNote; Insert: Partial<OnboardingAdminNote>; Update: Partial<OnboardingAdminNote>; Relationships: R };
+      onboarding_examples:    { Row: OnboardingExample;   Insert: Partial<OnboardingExample>;   Update: Partial<OnboardingExample>;   Relationships: R };
     };
     Views:    { [_ in never]: never };
     Functions:{ [_ in never]: never };

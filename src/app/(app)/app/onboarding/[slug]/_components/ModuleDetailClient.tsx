@@ -2,11 +2,11 @@
 
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Text, HStack } from '@chakra-ui/react';
+import { Box, Text, HStack, VStack } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import type { OnboardingModule, OnboardingAnswer } from '@/lib/types/database';
+import type { OnboardingModule, OnboardingAnswer, OnboardingExample } from '@/lib/types/database';
 import type {
   SectionWithQuestions, AdminNoteWithAdmin, OrgMember,
 } from '../../_components/types';
@@ -27,11 +27,12 @@ interface Props {
   userId:         string;
   orgId:          string;
   isAdmin:        boolean;
+  examples:       OnboardingExample[];
 }
 
 export function ModuleDetailClient({
   module, sections, initialAnswers, adminNotes: initialAdminNotes,
-  orgMembers, userId, orgId, isAdmin,
+  orgMembers, userId, orgId, isAdmin, examples,
 }: Props) {
   const router   = useRouter();
   const supabase = createClient();
@@ -387,6 +388,67 @@ export function ModuleDetailClient({
             </MotionBox>
           )}
         </AnimatePresence>
+
+        {/* ─── BEISPIELSKRIPTE VON T&J ──────────────────────────────────── */}
+        {examples.length > 0 && (
+          <Box mt="var(--space-10)" pt="var(--space-8)" borderTop="1px solid var(--mist)">
+            <Text
+              fontFamily="var(--font-mono)"
+              fontSize="10px"
+              fontWeight={500}
+              letterSpacing="0.14em"
+              textTransform="uppercase"
+              color="var(--leaf)"
+              mb="var(--space-4)"
+            >
+              — Beispielskripte von T&J
+            </Text>
+            <Text
+              fontFamily="var(--font-display)"
+              fontStyle="italic"
+              fontSize="clamp(22px,3vw,32px)"
+              letterSpacing="-0.03em"
+              lineHeight={1.1}
+              color="var(--ink)"
+              mb="var(--space-6)"
+            >
+              Inspiration für deinen Direct Pitch
+            </Text>
+            <VStack spacing={4} align="stretch">
+              {examples.map((ex) => (
+                <Box
+                  key={ex.id}
+                  bg="var(--paper)"
+                  border="1px solid var(--mist)"
+                  borderRadius="var(--radius-3)"
+                  p={5}
+                >
+                  {ex.title && (
+                    <Text
+                      fontFamily="var(--font-sans)"
+                      fontSize="14px"
+                      fontWeight={600}
+                      letterSpacing="-0.01em"
+                      color="var(--ink)"
+                      mb={3}
+                    >
+                      {ex.title}
+                    </Text>
+                  )}
+                  <Text
+                    fontFamily="var(--font-sans)"
+                    fontSize="14px"
+                    color="var(--ink)"
+                    lineHeight={1.75}
+                    style={{ whiteSpace: 'pre-wrap' }}
+                  >
+                    {ex.content}
+                  </Text>
+                </Box>
+              ))}
+            </VStack>
+          </Box>
+        )}
       </Box>
 
       {/* Admin Panel */}
