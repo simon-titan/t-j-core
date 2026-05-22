@@ -36,9 +36,27 @@ export default function SetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setStatus(session ? 'ready' : 'error');
-    });
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    const accessToken  = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (!accessToken || !refreshToken) {
+      setStatus('error');
+      return;
+    }
+
+    supabase.auth
+      .setSession({ access_token: accessToken, refresh_token: refreshToken })
+      .then(({ data: { session }, error }) => {
+        if (error || !session) {
+          setStatus('error');
+          return;
+        }
+        // Remove tokens from URL bar
+        window.history.replaceState(null, '', window.location.pathname);
+        setStatus('ready');
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
