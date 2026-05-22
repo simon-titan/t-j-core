@@ -101,7 +101,10 @@ export function AccountSettings({ email, fullName }: Props) {
   async function handleEmailSave() {
     if (!canSaveEmail) return;
     setSavingEmail(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    const { error } = await supabase.auth.updateUser(
+      { email: newEmail.trim() },
+      { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    );
     setSavingEmail(false);
     if (error) {
       t.error(error.message ?? 'E-Mail konnte nicht geändert werden');
