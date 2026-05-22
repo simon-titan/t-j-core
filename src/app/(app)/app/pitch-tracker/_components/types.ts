@@ -143,3 +143,125 @@ export function filterByTimeRange(pitches: PitchWithRelations[], range: TimeRang
   cutoff.setDate(cutoff.getDate() - days);
   return pitches.filter(p => new Date(p.sent_at) >= cutoff);
 }
+
+// ─── Light Version (daily stats) ───────────────────────────────────────────────
+
+export type LightMode = 'auto' | 'manual';
+
+/** A single editable/aggregated day. `id` is present only for stored manual rows. */
+export interface DailyStatRow {
+  id?:              string;
+  entry_date:       string; // 'YYYY-MM-DD'
+  messages_sent:    number;
+  followups_sent:   number;
+  replies_received: number;
+  appointments_set: number;
+  closings:         number;
+}
+
+/** Raw per-user data fed into the auto-aggregation. */
+export interface LightRawData {
+  pitches:      Array<{ sent_at: string; answered_at: string | null }>;
+  followups:    Array<{ status: string; sent_at: string | null }>;
+  appointments: Array<{ created_at: string }>;
+  wonLeads:     Array<{ updated_at: string }>;
+}
+
+export interface DailyStatRates {
+  answerRate:  number; // Erhaltene Antworten / Gesendete Nachrichten
+  apptRate:    number; // Gelegte Termine / Erhaltene Antworten
+  closingRate: number; // Closings / Gelegte Termine
+}
+
+/** Column headers for the Light daily-stats table (matches the screenshot). */
+export const LIGHT_NUMERIC_COLUMNS = [
+  { key: 'messages_sent',    label: 'Gesendete Nachrichten' },
+  { key: 'followups_sent',   label: 'Gesendete Follow-ups'  },
+  { key: 'replies_received', label: 'Erhaltene Antworten'   },
+  { key: 'appointments_set', label: 'Gelegte Termine'       },
+  { key: 'closings',         label: 'Closings'              },
+] as const;
+
+export type LightNumericKey = (typeof LIGHT_NUMERIC_COLUMNS)[number]['key'];
+
+function roundPct(num: number, den: number): number {
+  if (den <= 0) return 0;
+  return Math.round((num / den) * 1000) / 10;
+}
+
+export function calcRates(r: {
+  messages_sent: number;
+  replies_received: number;
+  appointments_set: number;
+  closings: number;
+}): DailyStatRates {
+  return {
+    answerRate:  roundPct(r.replies_received, r.messages_sent),
+    apptRate:    roundPct(r.appointments_set, r.replies_received),
+    closingRate: roundPct(r.closings, r.appointments_set),
+  };
+}
+
+/** Local-time YYYY-MM-DD key for a timestamp. */
+export function toDateKey(dateStr: string): string {
+  const d   = new Date(dateStr);
+  const y   = d.getFullYear();
+  const m   = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Display a YYYY-MM-DD key as DD.MM.YY. */
+export function formatDateKey(key: string): string {
+  const [y, m, d] = key.split('-');
+  return `${d}.${m}.${y.slice(2)}`;
+}
+
+function rangeCutoff(range: TimeRange): Date | null {
+  if (range === 'all') return null;
+  const days   = range === '7d' ? 7 : range === '30d' ? 30 : 90;
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - days);
+  return cutoff;
+}
+
+/** Aggregate raw per-user data into one row per calendar day, newest first. */
+export function aggregateAutoStats(raw: LightRawData, range: TimeRange): DailyStatRow[] {
+  const cutoff = rangeCutoff(range);
+  const within = (dateStr: string) => !cutoff || new Date(dateStr) >= cutoff;
+  const map = new Map<string, DailyStatRow>();
+  const ensure = (key: string): DailyStatRow => {
+    let row = map.get(key);
+    if (!row) {
+      row = { entry_date: key, messages_sent: 0, followups_sent: 0, replies_received: 0, appointments_set: 0, closings: 0 };
+      map.set(key, row);
+    }
+    return row;
+  };
+
+  raw.pitches.forEach(p => {
+    if (within(p.sent_at)) ensure(toDateKey(p.sent_at)).messages_sent++;
+    if (p.answered_at && within(p.answered_at)) ensure(toDateKey(p.answered_at)).replies_received++;
+  });
+  raw.followups.forEach(f => {
+    if (f.status === 'sent' && f.sent_at && within(f.sent_at)) ensure(toDateKey(f.sent_at)).followups_sent++;
+  });
+  raw.appointments.forEach(a => {
+    if (within(a.created_at)) ensure(toDateKey(a.created_at)).appointments_set++;
+  });
+  raw.wonLeads.forEach(l => {
+    if (within(l.updated_at)) ensure(toDateKey(l.updated_at)).closings++;
+  });
+
+  return Array.from(map.values()).sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+}
+
+/** Filter stored manual rows by time range, newest first. */
+export function filterManualByRange(rows: DailyStatRow[], range: TimeRange): DailyStatRow[] {
+  const cutoff = rangeCutoff(range);
+  const filtered = cutoff
+    ? rows.filter(r => new Date(`${r.entry_date}T00:00:00`) >= cutoff)
+    : rows;
+  return [...filtered].sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+}

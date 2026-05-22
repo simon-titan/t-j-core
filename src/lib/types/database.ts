@@ -21,14 +21,32 @@ export interface Organization {
   updated_at: string;
 }
 
+export type PitchTrackerDefault = 'detailed' | 'light_auto' | 'light_manual';
+
 export interface Profile {
-  id:              string;
-  organization_id: string;
-  role:            UserRole;
-  full_name:       string | null;
-  avatar_url:      string | null;
-  created_at:      string;
-  updated_at:      string;
+  id:                    string;
+  organization_id:       string;
+  role:                  UserRole;
+  full_name:             string | null;
+  avatar_url:            string | null;
+  pitch_tracker_default: PitchTrackerDefault;
+  created_at:            string;
+  updated_at:            string;
+}
+
+export interface PitchTrackerDailyStat {
+  id:               string;
+  organization_id:  string;
+  user_id:          string;
+  entry_date:       string;
+  messages_sent:    number;
+  followups_sent:   number;
+  replies_received: number;
+  appointments_set: number;
+  closings:         number;
+  notes:            string | null;
+  created_at:       string;
+  updated_at:       string;
 }
 
 export interface PitchTemplate {
@@ -293,6 +311,7 @@ export type Database = {
       onboarding_examples:    { Row: OnboardingExample;   Insert: Partial<OnboardingExample>;   Update: Partial<OnboardingExample>;   Relationships: R };
       user_pitch_scripts:     { Row: UserPitchScript;     Insert: Partial<UserPitchScript>;     Update: Partial<UserPitchScript>;     Relationships: R };
       script_template_steps:  { Row: ScriptTemplateStep;  Insert: Partial<ScriptTemplateStep>;  Update: Partial<ScriptTemplateStep>;  Relationships: R };
+      pitch_tracker_daily_stats: { Row: PitchTrackerDailyStat; Insert: Partial<PitchTrackerDailyStat>; Update: Partial<PitchTrackerDailyStat>; Relationships: R };
     };
     Views:    { [_ in never]: never };
     Functions:{ [_ in never]: never };

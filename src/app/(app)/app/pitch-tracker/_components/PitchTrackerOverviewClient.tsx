@@ -6,11 +6,15 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { Plus, Send, TrendingUp, CalendarDays, Bell } from 'lucide-react';
-import type { TemplateWithStats, OrgMember, PitchStatus, TimeRange } from './types';
+import { Plus, Send, TrendingUp, CalendarDays, Bell, Star } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { t as toast } from '@/lib/toast';
+import type { PitchTrackerDefault } from '@/lib/types/database';
+import type { TemplateWithStats, OrgMember, PitchStatus, TimeRange, LightRawData, DailyStatRow } from './types';
 import { TemplateCard, NoTemplateCard, CreateTemplateCard } from './TemplateCard';
 import { TeamPerformanceSection } from './TeamPerformanceSection';
 import { CreateTemplateModal } from './CreateTemplateModal';
+import { PitchTrackerLightView } from './PitchTrackerLightView';
 
 const MotionBox = motion(Box);
 
@@ -43,13 +47,22 @@ interface NoTemplatePitch {
 }
 
 interface Props {
-  templates:         TemplateWithStats[];
-  noTemplatePitches: NoTemplatePitch[];
-  members:           OrgMember[];
-  openFollowups:     number;
-  userId:            string;
-  orgId:             string;
+  templates:           TemplateWithStats[];
+  noTemplatePitches:   NoTemplatePitch[];
+  members:             OrgMember[];
+  openFollowups:       number;
+  userId:              string;
+  orgId:               string;
+  pitchTrackerDefault: PitchTrackerDefault;
+  lightRawData:        LightRawData;
+  manualStats:         DailyStatRow[];
 }
+
+const VIEW_OPTIONS: { value: PitchTrackerDefault; label: string }[] = [
+  { value: 'detailed',      label: 'Detailliert'   },
+  { value: 'light_auto',    label: 'Light · Auto'  },
+  { value: 'light_manual',  label: 'Light · Manuell' },
+];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -60,10 +73,32 @@ export function PitchTrackerOverviewClient({
   openFollowups,
   userId,
   orgId,
+  pitchTrackerDefault,
+  lightRawData,
+  manualStats,
 }: Props) {
   const [templates, setTemplates] = useState<TemplateWithStats[]>(initialTemplates);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [view, setView] = useState<PitchTrackerDefault>(pitchTrackerDefault);
+  const [savedDefault, setSavedDefault] = useState<PitchTrackerDefault>(pitchTrackerDefault);
+  const [savingDefault, setSavingDefault] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  async function handleSetDefault() {
+    setSavingDefault(true);
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from('profiles') as any)
+      .update({ pitch_tracker_default: view })
+      .eq('id', userId);
+    setSavingDefault(false);
+    if (error) {
+      toast.error('Standard konnte nicht gespeichert werden');
+    } else {
+      setSavedDefault(view);
+      toast.success('Als Standard festgelegt');
+    }
+  }
 
   const allPitches = [
     ...templates.flatMap(t => t.pitches),
@@ -122,37 +157,114 @@ export function PitchTrackerOverviewClient({
         </Box>
 
         {/* Variante anlegen — leaf-glow gradient per design system */}
-        <Box
-          as="button"
-          onClick={onOpen}
-          display="flex"
-          alignItems="center"
-          gap="8px"
-          px={5}
-          h="42px"
-          borderRadius="var(--radius-3)"
-          background="linear-gradient(135deg, #2D5443 0%, #4A7C5C 100%)"
-          color="white"
-          fontFamily="var(--font-sans)"
-          fontSize="13px"
-          fontWeight={600}
-          letterSpacing="0.01em"
-          cursor="pointer"
-          boxShadow="0 2px 12px rgba(45,84,67,0.25)"
-          sx={{
-            transition: 'all 180ms var(--ease-default)',
-            '&:hover': {
-              transform:  'translateY(-1px)',
-              boxShadow: '0 4px 20px rgba(45,84,67,0.35)',
-            },
-            '&:active': { transform: 'translateY(0)' },
-          }}
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          Variante anlegen
-        </Box>
+        {view === 'detailed' && (
+          <Box
+            as="button"
+            onClick={onOpen}
+            display="flex"
+            alignItems="center"
+            gap="8px"
+            px={5}
+            h="42px"
+            borderRadius="var(--radius-3)"
+            background="linear-gradient(135deg, #2D5443 0%, #4A7C5C 100%)"
+            color="white"
+            fontFamily="var(--font-sans)"
+            fontSize="13px"
+            fontWeight={600}
+            letterSpacing="0.01em"
+            cursor="pointer"
+            boxShadow="0 2px 12px rgba(45,84,67,0.25)"
+            sx={{
+              transition: 'all 180ms var(--ease-default)',
+              '&:hover': {
+                transform:  'translateY(-1px)',
+                boxShadow: '0 4px 20px rgba(45,84,67,0.35)',
+              },
+              '&:active': { transform: 'translateY(0)' },
+            }}
+          >
+            <Plus size={15} strokeWidth={2.5} />
+            Variante anlegen
+          </Box>
+        )}
       </HStack>
 
+      {/* ── View Switcher (Detailliert · Light Auto · Light Manuell) ── */}
+      <HStack justify="space-between" align="center" mb={8} flexWrap="wrap" gap={3}>
+        <HStack spacing={0} bg="var(--frost)" border="1px solid var(--mist)" borderRadius="var(--radius-2)" p="3px">
+          {VIEW_OPTIONS.map(opt => (
+            <Box
+              as="button"
+              key={opt.value}
+              onClick={() => setView(opt.value)}
+              px="16px"
+              py="7px"
+              borderRadius="5px"
+              fontFamily="var(--font-display)"
+              fontStyle={view === opt.value ? 'italic' : 'normal'}
+              fontSize="13px"
+              letterSpacing="-0.01em"
+              fontWeight={view === opt.value ? 600 : 400}
+              bg={view === opt.value ? 'var(--forest)' : 'transparent'}
+              color={view === opt.value ? 'var(--paper)' : 'var(--mute)'}
+              cursor="pointer"
+              sx={{ transition: 'all 140ms var(--ease-default)' }}
+              _hover={view !== opt.value ? { color: 'var(--forest)', bg: 'rgba(45,84,67,0.06)' } : {}}
+            >
+              {opt.label}
+            </Box>
+          ))}
+        </HStack>
+
+        <HStack spacing={2}>
+          {view === savedDefault ? (
+            <HStack spacing={1} color="var(--mute)">
+              <Star size={13} strokeWidth={2} fill="var(--forest)" color="var(--forest)" />
+              <Text fontFamily="var(--font-mono)" fontSize="10px" letterSpacing="0.10em" textTransform="uppercase">
+                Standard
+              </Text>
+            </HStack>
+          ) : (
+            <Box
+              as="button"
+              onClick={handleSetDefault}
+              display="flex"
+              alignItems="center"
+              gap="6px"
+              px="12px"
+              h="34px"
+              borderRadius="var(--radius-2)"
+              border="1px solid var(--mist)"
+              bg="var(--paper)"
+              color="var(--ink)"
+              fontFamily="var(--font-sans)"
+              fontSize="12px"
+              fontWeight={500}
+              cursor={savingDefault ? 'wait' : 'pointer'}
+              opacity={savingDefault ? 0.6 : 1}
+              _hover={{ borderColor: 'var(--forest)', color: 'var(--forest)' }}
+              sx={{ transition: 'all 140ms var(--ease-default)' }}
+            >
+              <Star size={13} strokeWidth={2} />
+              Als Standard
+            </Box>
+          )}
+        </HStack>
+      </HStack>
+
+      {view !== 'detailed' && (
+        <PitchTrackerLightView
+          mode={view === 'light_auto' ? 'auto' : 'manual'}
+          lightRawData={lightRawData}
+          manualStats={manualStats}
+          userId={userId}
+          orgId={orgId}
+        />
+      )}
+
+      {view === 'detailed' && (
+      <>
       {/* ── Gesamt KPI Section ── */}
       <Box mb={9}>
         <HStack justify="space-between" align="center" mb={5}>
@@ -351,6 +463,8 @@ export function PitchTrackerOverviewClient({
           </Box>
         )}
       </Box>
+      </>
+      )}
 
       <CreateTemplateModal
         isOpen={isOpen}
