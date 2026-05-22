@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { Profile, OnboardingAnswer, OnboardingExample, UserPitchScript } from '@/lib/types/database';
+import type { Profile, OnboardingAnswer, OnboardingExample, UserPitchScript, ScriptTemplateStep } from '@/lib/types/database';
 import type { SectionWithQuestions, AdminNoteWithAdmin, OrgMember } from '../_components/types';
 import { ModuleDetailClient } from './_components/ModuleDetailClient';
+import { ScriptModuleClient } from './_components/ScriptModuleClient';
 
 interface Props {
   params: { slug: string };
@@ -99,6 +100,28 @@ export default async function OnboardingModulePage({ params }: Props) {
   const orgMembers      = (orgMembersRes.data   ?? []) as OrgMember[];
   const examples        = (examplesRes.data     ?? []) as OnboardingExample[];
   const initialPitch    = (pitchScriptRes.data  ?? null) as UserPitchScript | null;
+
+  // ─── Script modules use a dedicated builder + editable T&J template ─────────
+  if (moduleData.type === 'script') {
+    const { data: templateData } = await supabase
+      .from('script_template_steps')
+      .select('*')
+      .eq('module_slug', params.slug)
+      .order('order_index');
+
+    return (
+      <ScriptModuleClient
+        module={moduleData}
+        sections={sections}
+        initialAnswers={initialAnswers}
+        templateSteps={(templateData ?? []) as ScriptTemplateStep[]}
+        userId={user.id}
+        orgId={profile.organization_id}
+        isAdmin={isAdmin}
+        initialCustomNotes={initialPitch?.content ?? ''}
+      />
+    );
+  }
 
   return (
     <ModuleDetailClient

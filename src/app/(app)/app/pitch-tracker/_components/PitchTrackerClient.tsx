@@ -67,6 +67,25 @@ export function PitchTrackerClient({ pitches: initialPitches, templates, followu
     t.success('Pitch gelöscht');
   }
 
+  function handleNotesUpdated(id: string, notes: string | null) {
+    setPitches(prev => prev.map(p => p.id === id ? { ...p, notes } : p));
+  }
+
+  function handleAppointmentCreated(
+    pitchId: string,
+    leadId: string,
+    appt: { id: string; scheduled_at: string; status: string }
+  ) {
+    setPitches(prev => prev.map(p => {
+      if (p.id !== pitchId) return p;
+      const existingLead = p.leads?.[0];
+      const lead = existingLead
+        ? { ...existingLead, appointments: [appt] }
+        : { id: leadId, status: 'contacted' as const, appointments: [appt] };
+      return { ...p, leads: [lead] };
+    }));
+  }
+
   return (
     <MotionBox
       initial={{ opacity: 0, y: 12 }}
@@ -198,6 +217,10 @@ export function PitchTrackerClient({ pitches: initialPitches, templates, followu
               onStatusChange={handleStatusChange}
               onLeadCreated={handleLeadCreated}
               onDelete={handleDeletePitch}
+              onNotesUpdated={handleNotesUpdated}
+              onAppointmentCreated={handleAppointmentCreated}
+              userId={userId}
+              orgId={orgId}
             />
           </TabPanel>
           <TabPanel px={0} pt={0}>

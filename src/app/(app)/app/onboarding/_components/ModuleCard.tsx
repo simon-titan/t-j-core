@@ -7,6 +7,7 @@ import {
   BookOpen, Target, Users, Zap, RotateCcw,
   Globe, FileText, TrendingUp, CheckSquare, CheckCircle2,
   ShieldCheck, Briefcase, MessageSquare, ArrowRight,
+  Mic, PhoneCall,
 } from 'lucide-react';
 import type { ModuleWithProgress } from './types';
 
@@ -24,6 +25,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   'sales':                          TrendingUp,
   'closing-skript-1':               CheckSquare,
   'closing-skript-2':               CheckCircle2,
+  'closing-skript-1-call':          Mic,
+  'closing-skript-2-call':          PhoneCall,
   'einwandbehandlung':              ShieldCheck,
 };
 

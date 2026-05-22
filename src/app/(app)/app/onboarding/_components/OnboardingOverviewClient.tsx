@@ -18,7 +18,7 @@ const fadeInUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.65, 0, 0.35, 1] } },
 };
 
-type TypeFilter   = 'all' | 'workbook' | 'reference';
+type TypeFilter   = 'all' | 'workbook' | 'script' | 'reference';
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'completed';
 
 interface Props {
@@ -96,11 +96,16 @@ export function OnboardingOverviewClient({ modules, totalQuestions, totalAnswere
   const totalPct = totalQuestions > 0 ? Math.round((totalAnswered / totalQuestions) * 100) : 0;
 
   const workbooks  = useMemo(() => modules.filter((m) => m.type === 'workbook'),  [modules]);
+  const scripts    = useMemo(() => modules.filter((m) => m.type === 'script'),    [modules]);
   const references = useMemo(() => modules.filter((m) => m.type === 'reference'), [modules]);
 
   const filteredWorkbooks = useMemo(
     () => workbooks.filter((m) => activeStatus === 'all' || m.status === activeStatus),
     [workbooks, activeStatus]
+  );
+  const filteredScripts = useMemo(
+    () => scripts.filter((m) => activeStatus === 'all' || m.status === activeStatus),
+    [scripts, activeStatus]
   );
   const filteredReferences = useMemo(
     () => references.filter((m) => activeStatus === 'all' || m.status === activeStatus),
@@ -108,6 +113,7 @@ export function OnboardingOverviewClient({ modules, totalQuestions, totalAnswere
   );
 
   const showWorkbooks  = activeType === 'all' || activeType === 'workbook';
+  const showScripts    = activeType === 'all' || activeType === 'script';
   const showReferences = activeType === 'all' || activeType === 'reference';
 
   const completedModules = modules.filter((m) => m.status === 'completed').length;
@@ -273,9 +279,9 @@ export function OnboardingOverviewClient({ modules, totalQuestions, totalAnswere
             display="inline-flex"
             gap="2px"
           >
-            {(['all', 'workbook', 'reference'] as TypeFilter[]).map((v) => (
+            {(['all', 'workbook', 'script', 'reference'] as TypeFilter[]).map((v) => (
               <SegmentButton key={v} active={activeType === v} onClick={() => setActiveType(v)}>
-                {v === 'all' ? 'Alle' : v === 'workbook' ? 'Workbooks' : 'References'}
+                {v === 'all' ? 'Alle' : v === 'workbook' ? 'Workbooks' : v === 'script' ? 'Skripte' : 'References'}
               </SegmentButton>
             ))}
           </Box>
@@ -358,6 +364,43 @@ export function OnboardingOverviewClient({ modules, totalQuestions, totalAnswere
               </Box>
             )}
 
+            {/* ── Skripte ── */}
+            {showScripts && filteredScripts.length > 0 && (
+              <Box mb="var(--space-10)">
+                <HStack mb="var(--space-5)" align="baseline" gap="var(--space-3)">
+                  <Text
+                    fontFamily="var(--font-mono)"
+                    fontSize="10px"
+                    fontWeight={600}
+                    letterSpacing="0.14em"
+                    textTransform="uppercase"
+                    color="var(--forest)"
+                  >
+                    — Skripte
+                  </Text>
+                  <Box w="1px" h="11px" bg="var(--mist)" />
+                  <Text fontFamily="var(--font-sans)" fontSize="12px" color="rgba(14,14,12,0.45)">
+                    {filteredScripts.length} Skripte
+                  </Text>
+                </HStack>
+
+                <MotionBox
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  display="grid"
+                  gridTemplateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
+                  gap="var(--space-5)"
+                >
+                  {filteredScripts.map((mod, i) => (
+                    <MotionBox key={mod.id} variants={fadeInUp} h="100%">
+                      <ModuleCard module={mod} size="large" index={i} />
+                    </MotionBox>
+                  ))}
+                </MotionBox>
+              </Box>
+            )}
+
             {/* ── References ── */}
             {showReferences && filteredReferences.length > 0 && (
               <Box>
@@ -396,7 +439,7 @@ export function OnboardingOverviewClient({ modules, totalQuestions, totalAnswere
             )}
 
             {/* Empty state */}
-            {filteredWorkbooks.length === 0 && filteredReferences.length === 0 && (
+            {filteredWorkbooks.length === 0 && filteredScripts.length === 0 && filteredReferences.length === 0 && (
               <Box
                 textAlign="center"
                 py="var(--space-10)"

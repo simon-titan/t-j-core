@@ -9,20 +9,19 @@ import type { PitchWithRelations } from './types';
 import { t } from '@/lib/toast';
 
 interface Props {
-  templateId: string | null; // null = "no-template"
+  templateId: string | null;
   orgId:      string;
   userId:     string;
   onCreated:  (pitch: PitchWithRelations) => void;
 }
 
 interface FormState {
-  firstName:   string;
-  lastName:    string;
+  name:        string;
   linkedinUrl: string;
   notes:       string;
 }
 
-const EMPTY: FormState = { firstName: '', lastName: '', linkedinUrl: '', notes: '' };
+const EMPTY: FormState = { name: '', linkedinUrl: '', notes: '' };
 
 const inputStyles = {
   bg:           'transparent',
@@ -54,38 +53,49 @@ export function StickyAddRow({ templateId, orgId, userId, onCreated }: Props) {
   const supabase = createClient();
 
   async function handleSubmit() {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.linkedinUrl.trim()) {
-      setError('Vorname, Nachname und LinkedIn URL sind erforderlich.');
+    if (!form.name.trim()) {
+      setError('Name ist erforderlich.');
       return;
     }
     setError(null);
     setLoading(true);
 
+    const nameParts  = form.name.trim().split(/\s+/);
+    const first_name = nameParts[0] ?? '';
+    const last_name  = nameParts.slice(1).join(' ');
+    const linkedinUrl = form.linkedinUrl.trim();
+
     try {
-      // 1. Upsert prospect
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: prospectData, error: prospectErr } = await (supabase.from('prospects') as any)
-        .upsert(
-          {
-            organization_id: orgId,
-            first_name:      form.firstName.trim(),
-            last_name:       form.lastName.trim(),
-            linkedin_url:    form.linkedinUrl.trim(),
-            created_by:      userId,
-          },
-          { onConflict: 'linkedin_url', ignoreDuplicates: false }
-        )
-        .select('id, first_name, last_name, linkedin_url, company')
-        .single();
+      let prospectData: { id: string; first_name: string; last_name: string; linkedin_url: string | null; company: string | null } | null = null;
 
-      if (prospectErr || !prospectData) throw prospectErr ?? new Error('Prospect konnte nicht angelegt werden.');
+      if (linkedinUrl) {
+        // Upsert by linkedin_url to avoid duplicates
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error: err } = await (supabase.from('prospects') as any)
+          .upsert(
+            { organization_id: orgId, first_name, last_name, linkedin_url: linkedinUrl, created_by: userId },
+            { onConflict: 'linkedin_url', ignoreDuplicates: false }
+          )
+          .select('id, first_name, last_name, linkedin_url, company')
+          .single();
+        if (err || !data) throw err ?? new Error('Prospect konnte nicht angelegt werden.');
+        prospectData = data;
+      } else {
+        // No LinkedIn URL — plain insert
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error: err } = await (supabase.from('prospects') as any)
+          .insert({ organization_id: orgId, first_name, last_name, linkedin_url: null, created_by: userId })
+          .select('id, first_name, last_name, linkedin_url, company')
+          .single();
+        if (err || !data) throw err ?? new Error('Prospect konnte nicht angelegt werden.');
+        prospectData = data;
+      }
 
-      // 2. Create pitch
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: pitchData, error: pitchErr } = await (supabase.from('pitches') as any)
         .insert({
           organization_id: orgId,
-          prospect_id:     prospectData.id,
+          prospect_id:     prospectData!.id,
           template_id:     templateId,
           sent_by:         userId,
           status:          'sent',
@@ -97,7 +107,6 @@ export function StickyAddRow({ templateId, orgId, userId, onCreated }: Props) {
 
       if (pitchErr || !pitchData) throw pitchErr ?? new Error('Pitch konnte nicht angelegt werden.');
 
-      // 3. Create 3 follow-up slots
       const today = new Date();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('followups') as any).insert([
@@ -163,25 +172,16 @@ export function StickyAddRow({ templateId, orgId, userId, onCreated }: Props) {
       <HStack px={3} pb={2} spacing={2} align="center">
         <Input
           {...inputStyles}
-          placeholder="Vorname *"
-          value={form.firstName}
-          onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+          placeholder="Vollständiger Name *"
+          value={form.name}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
           onKeyDown={handleKeyDown}
-          flex="1"
-          minW="90px"
+          flex="2"
+          minW="140px"
         />
         <Input
           {...inputStyles}
-          placeholder="Nachname *"
-          value={form.lastName}
-          onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-          onKeyDown={handleKeyDown}
-          flex="1"
-          minW="90px"
-        />
-        <Input
-          {...inputStyles}
-          placeholder="LinkedIn URL *"
+          placeholder="LinkedIn URL (optional)"
           value={form.linkedinUrl}
           onChange={e => setForm(f => ({ ...f, linkedinUrl: e.target.value }))}
           onKeyDown={handleKeyDown}
@@ -198,7 +198,6 @@ export function StickyAddRow({ templateId, orgId, userId, onCreated }: Props) {
           minW="120px"
         />
 
-        {/* Submit Button */}
         <Box
           as="button"
           onClick={handleSubmit}
@@ -229,7 +228,6 @@ export function StickyAddRow({ templateId, orgId, userId, onCreated }: Props) {
         </Box>
       </HStack>
 
-      {/* Error */}
       {error && (
         <HStack px={3} pb={2} spacing={1}>
           <AlertCircle size={12} color="#991B1B" />

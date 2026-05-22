@@ -1,29 +1,26 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import {
   Box, HStack, Text, Switch, Tooltip, Menu, MenuButton,
-  MenuList, MenuItem, IconButton, Divider,
+  MenuList, MenuItem, IconButton, Input,
 } from '@chakra-ui/react';
-import { MoreHorizontal, Calendar, Trash2, FileEdit } from 'lucide-react';
+import { MoreHorizontal, Calendar, CalendarPlus, Trash2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { t } from '@/lib/toast';
 import type { PitchWithRelations, FollowupSlot, FollowupStatus } from './types';
 import { formatDateShort, formatDateFull, getUrgency } from './types';
 
 interface Props {
-  pitch:       PitchWithRelations;
-  onAnswer:    (id: string, checked: boolean) => void;
-  onDelete:    (id: string) => void;
-  onEditNotes: (id: string, notes: string) => void;
-  isUpdating:  boolean;
-  showSentBy?: boolean;
+  pitch:                  PitchWithRelations;
+  onAnswer:               (id: string, checked: boolean) => void;
+  onDelete:               (id: string) => void;
+  onScheduleAppointment:  (pitchId: string) => void;
+  onNotesUpdated:         (id: string, notes: string | null) => void;
+  isUpdating:             boolean;
+  showSentBy?:            boolean;
 }
 
-const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  sent:      { label: 'Gesendet',       bg: 'var(--frost)',        color: 'var(--mute)' },
-  delivered: { label: 'Zugestellt',     bg: 'rgba(74,124,92,0.1)', color: 'var(--leaf)' },
-  answered:  { label: 'Geantwortet',    bg: 'rgba(74,124,92,0.15)',color: 'var(--forest)' },
-  ignored:   { label: 'Ignoriert',      bg: 'rgba(14,14,12,0.06)', color: 'var(--mute)' },
-  bounced:   { label: 'Fehlgeschlagen', bg: 'rgba(153,27,27,0.08)','color': '#991B1B' },
-};
 
 const DOT_COLOR: Record<FollowupStatus, string> = {
   pending: 'var(--mist)',
@@ -55,23 +52,69 @@ function FollowupDot({ slot }: { slot: FollowupSlot }) {
   );
 }
 
-export function PitchRow({ pitch, onAnswer, onDelete, onEditNotes, isUpdating, showSentBy }: Props) {
-  const prospect = pitch.prospects;
-  const template = pitch.pitch_templates;
-  const appt     = pitch.leads?.[0]?.appointments?.[0] ?? null;
-  const badge    = STATUS_BADGE[pitch.status] ?? STATUS_BADGE.sent;
+export function PitchRow({
+  pitch,
+  onAnswer,
+  onDelete,
+  onScheduleAppointment,
+  onNotesUpdated,
+  isUpdating,
+  showSentBy,
+}: Props) {
+  const prospect    = pitch.prospects;
+  const template    = pitch.pitch_templates;
+  const appt        = pitch.leads?.[0]?.appointments?.[0] ?? null;
+  const hasLead     = !!pitch.leads?.[0];
 
   const fullName = prospect
-    ? `${prospect.first_name} ${prospect.last_name}`
+    ? `${prospect.first_name} ${prospect.last_name}`.trim()
     : '—';
 
   const slots: FollowupSlot[] = pitch.followups.slice(0, 3);
-  // Pad to 3 slots visually if fewer exist
   const padded: (FollowupSlot | null)[] = [
     slots[0] ?? null,
     slots[1] ?? null,
     slots[2] ?? null,
   ];
+
+  // ── Inline notes editing ───────────────────────────────────────────────────
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft]         = useState('');
+  const [savingNotes, setSavingNotes]       = useState(false);
+  const notesInputRef                       = useRef<HTMLInputElement>(null);
+  const supabase                            = createClient();
+
+  function startEditNotes() {
+    setNotesDraft(pitch.notes ?? '');
+    setIsEditingNotes(true);
+    // Focus after state update
+    setTimeout(() => notesInputRef.current?.focus(), 0);
+  }
+
+  async function commitNotes() {
+    if (savingNotes) return;
+    setSavingNotes(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from('pitches') as any)
+      .update({ notes: notesDraft.trim() || null })
+      .eq('id', pitch.id);
+    setSavingNotes(false);
+    setIsEditingNotes(false);
+    if (error) {
+      t.error('Notizen konnten nicht gespeichert werden');
+    } else {
+      onNotesUpdated(pitch.id, notesDraft.trim() || null);
+    }
+  }
+
+  function cancelNotes() {
+    setIsEditingNotes(false);
+  }
+
+  function handleNotesKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); commitNotes(); }
+    if (e.key === 'Escape') { cancelNotes(); }
+  }
 
   return (
     <Box
@@ -167,7 +210,7 @@ export function PitchRow({ pitch, onAnswer, onDelete, onEditNotes, isUpdating, s
         />
       </Box>
 
-      {/* Termin Chip */}
+      {/* Termin */}
       <Box>
         {appt ? (
           <Tooltip
@@ -184,7 +227,8 @@ export function PitchRow({ pitch, onAnswer, onDelete, onEditNotes, isUpdating, s
               py="3px"
               bg="var(--forest)"
               borderRadius="var(--radius-full)"
-              cursor="default"
+              cursor="pointer"
+              onClick={() => onScheduleAppointment(pitch.id)}
             >
               <Calendar size={11} strokeWidth={2} color="var(--paper)" />
               <Text fontFamily="var(--font-sans)" fontSize="11px" color="var(--paper)" fontWeight={500}>
@@ -192,19 +236,101 @@ export function PitchRow({ pitch, onAnswer, onDelete, onEditNotes, isUpdating, s
               </Text>
             </HStack>
           </Tooltip>
+        ) : hasLead ? (
+          <Tooltip label="Termin eintragen" placement="top" hasArrow fontFamily="var(--font-sans)" fontSize="11px">
+            <Box
+              as="button"
+              onClick={() => onScheduleAppointment(pitch.id)}
+              display="inline-flex"
+              alignItems="center"
+              justifyContent="center"
+              w="28px"
+              h="24px"
+              borderRadius="var(--radius-2)"
+              border="1px dashed"
+              borderColor="rgba(74,124,92,0.4)"
+              color="var(--forest)"
+              bg="transparent"
+              cursor="pointer"
+              transition="all 120ms"
+              _hover={{ bg: 'rgba(74,124,92,0.08)', borderColor: 'var(--forest)' }}
+            >
+              <CalendarPlus size={13} strokeWidth={1.8} />
+            </Box>
+          </Tooltip>
         ) : (
-          <Text fontFamily="var(--font-sans)" fontSize="11px" color="var(--mist)">—</Text>
+          <Tooltip label="Erst als beantwortet markieren" placement="top" hasArrow fontFamily="var(--font-sans)" fontSize="11px">
+            <Box
+              display="inline-flex"
+              alignItems="center"
+              justifyContent="center"
+              w="28px"
+              h="24px"
+              borderRadius="var(--radius-2)"
+              border="1px dashed"
+              borderColor="var(--mist)"
+              color="var(--mist)"
+              cursor="not-allowed"
+              opacity={0.5}
+            >
+              <CalendarPlus size={13} strokeWidth={1.8} />
+            </Box>
+          </Tooltip>
         )}
       </Box>
 
-      {/* Notizen */}
-      <Box minW={0} pr={2}>
-        {pitch.notes ? (
-          <Text fontFamily="var(--font-sans)" fontSize="12px" color="var(--mute)" noOfLines={1}>
+      {/* Notizen — inline editierbar */}
+      <Box
+        minW={0}
+        pr={2}
+        cursor={isEditingNotes ? 'text' : 'pointer'}
+        onClick={!isEditingNotes ? startEditNotes : undefined}
+        h="100%"
+        display="flex"
+        alignItems="center"
+      >
+        {isEditingNotes ? (
+          <Input
+            ref={notesInputRef}
+            value={notesDraft}
+            onChange={e => setNotesDraft(e.target.value)}
+            onBlur={commitNotes}
+            onKeyDown={handleNotesKeyDown}
+            size="xs"
+            fontFamily="var(--font-sans)"
+            fontSize="12px"
+            h="28px"
+            px={2}
+            bg="var(--paper)"
+            border="1px solid var(--leaf)"
+            borderRadius="var(--radius-1)"
+            boxShadow="0 0 0 2px rgba(74,124,92,0.12)"
+            color="var(--ink)"
+            _focus={{ outline: 'none' }}
+            placeholder="Notizen…"
+            isDisabled={savingNotes}
+          />
+        ) : pitch.notes ? (
+          <Text
+            fontFamily="var(--font-sans)"
+            fontSize="12px"
+            color="var(--mute)"
+            noOfLines={1}
+            _hover={{ color: 'var(--ink)' }}
+            transition="color 120ms"
+          >
             {pitch.notes}
           </Text>
         ) : (
-          <Text fontFamily="var(--font-sans)" fontSize="11px" color="var(--mist)">—</Text>
+          <Text
+            fontFamily="var(--font-sans)"
+            fontSize="11px"
+            color="var(--mist)"
+            _hover={{ color: 'var(--mute)' }}
+            transition="color 120ms"
+          >
+            — klicken zum Bearbeiten
+          </Text>
         )}
       </Box>
 
@@ -229,15 +355,6 @@ export function PitchRow({ pitch, onAnswer, onDelete, onEditNotes, isUpdating, s
           fontFamily="var(--font-sans)"
           fontSize="13px"
         >
-          <MenuItem
-            icon={<FileEdit size={13} strokeWidth={2} />}
-            color="var(--ink)"
-            _hover={{ bg: 'var(--frost)' }}
-            onClick={() => onEditNotes(pitch.id, pitch.notes ?? '')}
-          >
-            Notizen bearbeiten
-          </MenuItem>
-          <Divider my={1} borderColor="var(--mist)" />
           <MenuItem
             icon={<Trash2 size={13} strokeWidth={2} />}
             color="#991B1B"

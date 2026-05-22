@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Box, Text, VStack, Modal, ModalOverlay, ModalContent,
   ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
-  Button, Textarea, useDisclosure,
+  Button, Input, useDisclosure,
 } from '@chakra-ui/react';
 import { createClient } from '@/lib/supabase/client';
 import type { PitchWithRelations } from './types';
@@ -16,6 +16,10 @@ interface Props {
   onStatusChange:  (id: string, newStatus: 'answered' | 'sent') => void;
   onLeadCreated:   (prospectName: string | null) => void;
   onDelete:        (id: string) => void;
+  onNotesUpdated:  (id: string, notes: string | null) => void;
+  onAppointmentCreated: (pitchId: string, leadId: string, appt: { id: string; scheduled_at: string; status: string }) => void;
+  userId:          string;
+  orgId:           string;
   showSentBy?:     boolean;
 }
 
@@ -41,16 +45,37 @@ const COL_HEADERS_SENTBY = [
   { label: '',           w: '40px',          hideOnMobile: false },
 ];
 
-export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, showSentBy }: Props) {
+interface ApptTarget {
+  pitchId:        string;
+  prospectName:   string;
+  existingLeadId: string | null;
+  prospectId:     string;
+}
+
+export function PitchTable({
+  pitches,
+  onStatusChange,
+  onLeadCreated,
+  onDelete,
+  onNotesUpdated,
+  onAppointmentCreated,
+  userId,
+  orgId,
+  showSentBy,
+}: Props) {
   const COL_HEADERS    = showSentBy ? COL_HEADERS_SENTBY : COL_HEADERS_TEMPLATE;
   const gridTemplateMd = COL_HEADERS.map(c => c.w).join(' ');
   const gridTemplateSm = COL_HEADERS.filter(c => !c.hideOnMobile).map(c => c.w).join(' ');
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [editTarget, setEditTarget] = useState<{ id: string; notes: string } | null>(null);
+
+  const [updating, setUpdating]         = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [notesDraft, setNotesDraft]     = useState('');
-  const { isOpen: isNotesOpen, onOpen: openNotes, onClose: closeNotes } = useDisclosure();
+  const [apptTarget, setApptTarget]     = useState<ApptTarget | null>(null);
+  const [apptDate, setApptDate]         = useState('');
+  const [savingAppt, setSavingAppt]     = useState(false);
+
   const { isOpen: isDeleteOpen, onOpen: openDelete, onClose: closeDelete } = useDisclosure();
+  const { isOpen: isApptOpen,   onOpen: openAppt,   onClose: closeAppt   } = useDisclosure();
+
   const supabase = createClient();
 
   async function handleAnswer(id: string, checked: boolean) {
@@ -79,21 +104,75 @@ export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, s
     setUpdating(null);
   }
 
-  function handleEditNotes(id: string, notes: string) {
-    setEditTarget({ id, notes });
-    setNotesDraft(notes);
-    openNotes();
+  function handleScheduleAppointment(pitchId: string) {
+    const pitch = pitches.find(p => p.id === pitchId);
+    if (!pitch) return;
+    const name = pitch.prospects
+      ? `${pitch.prospects.first_name} ${pitch.prospects.last_name}`.trim()
+      : 'Termin';
+    setApptTarget({
+      pitchId,
+      prospectName:   name,
+      existingLeadId: pitch.leads?.[0]?.id ?? null,
+      prospectId:     pitch.prospect_id,
+    });
+    // Default to tomorrow at 10:00
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
+    setApptDate(tomorrow.toISOString().slice(0, 16));
+    openAppt();
   }
 
-  async function saveNotes() {
-    if (!editTarget) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('pitches') as any).update({ notes: notesDraft || null }).eq('id', editTarget.id);
-    if (error) {
-      t.error('Notizen konnten nicht gespeichert werden');
-    } else {
-      t.success('Notizen gespeichert');
-      closeNotes();
+  async function saveAppointment() {
+    if (!apptTarget || !apptDate) return;
+    setSavingAppt(true);
+    try {
+      let leadId = apptTarget.existingLeadId;
+
+      if (!leadId) {
+        // Auto-create a lead
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: leadData, error: leadErr } = await (supabase.from('leads') as any)
+          .insert({
+            organization_id: orgId,
+            prospect_id:     apptTarget.prospectId,
+            pitch_id:        apptTarget.pitchId,
+            assigned_to:     userId,
+            status:          'contacted',
+          })
+          .select('id')
+          .single();
+        if (leadErr || !leadData) throw leadErr ?? new Error('Lead konnte nicht angelegt werden.');
+        leadId = leadData.id;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: apptData, error: apptErr } = await (supabase.from('appointments') as any)
+        .insert({
+          organization_id:  orgId,
+          lead_id:          leadId,
+          created_by:       userId,
+          assigned_to:      userId,
+          title:            `Termin mit ${apptTarget.prospectName}`,
+          scheduled_at:     new Date(apptDate).toISOString(),
+          duration_minutes: 60,
+          status:           'scheduled',
+        })
+        .select('id, scheduled_at, status')
+        .single();
+
+      if (apptErr || !apptData) throw apptErr ?? new Error('Termin konnte nicht angelegt werden.');
+
+      t.success('Termin eingetragen');
+      onAppointmentCreated(apptTarget.pitchId, leadId!, apptData);
+      closeAppt();
+      setApptTarget(null);
+      setApptDate('');
+    } catch (err) {
+      t.error(err instanceof Error ? err.message : 'Fehler beim Speichern');
+    } finally {
+      setSavingAppt(false);
     }
   }
 
@@ -173,7 +252,8 @@ export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, s
               pitch={pitch}
               onAnswer={handleAnswer}
               onDelete={handleDelete}
-              onEditNotes={handleEditNotes}
+              onScheduleAppointment={handleScheduleAppointment}
+              onNotesUpdated={onNotesUpdated}
               isUpdating={updating === pitch.id}
               showSentBy={showSentBy}
             />
@@ -181,8 +261,8 @@ export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, s
         </VStack>
       </Box>
 
-      {/* Notes Edit Modal */}
-      <Modal isOpen={isNotesOpen} onClose={closeNotes} isCentered size="md">
+      {/* Appointment Modal */}
+      <Modal isOpen={isApptOpen} onClose={closeAppt} isCentered size="sm">
         <ModalOverlay bg="rgba(14,14,12,0.65)" backdropFilter="blur(4px)" />
         <ModalContent
           bg="var(--paper)"
@@ -197,24 +277,28 @@ export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, s
             fontSize="22px"
             letterSpacing="-0.02em"
             color="var(--ink)"
-            pb={2}
+            pb={1}
           >
-            Notizen bearbeiten
+            Termin eintragen
           </ModalHeader>
+          {apptTarget && (
+            <Text fontFamily="var(--font-sans)" fontSize="13px" color="var(--mute)" px={6} pb={2}>
+              {apptTarget.prospectName}
+            </Text>
+          )}
           <ModalCloseButton color="var(--mute)" />
           <ModalBody pb={4}>
-            <Textarea
-              value={notesDraft}
-              onChange={e => setNotesDraft(e.target.value)}
-              rows={4}
+            <Input
+              type="datetime-local"
+              value={apptDate}
+              onChange={e => setApptDate(e.target.value)}
               fontFamily="var(--font-sans)"
               fontSize="14px"
               bg="var(--frost)"
               border="1px solid var(--mist)"
               borderRadius="var(--radius-2)"
               _focus={{ borderColor: 'var(--leaf)', boxShadow: '0 0 0 3px rgba(74,124,92,0.12)' }}
-              resize="vertical"
-              placeholder="Notizen zum Pitch…"
+              color="var(--ink)"
             />
           </ModalBody>
           <ModalFooter gap={2}>
@@ -223,19 +307,23 @@ export function PitchTable({ pitches, onStatusChange, onLeadCreated, onDelete, s
               size="sm"
               fontFamily="var(--font-sans)"
               color="var(--mute)"
-              onClick={closeNotes}
+              onClick={closeAppt}
+              isDisabled={savingAppt}
             >
               Abbrechen
             </Button>
             <Button
               size="sm"
               fontFamily="var(--font-sans)"
-              bg="var(--ink)"
+              bg="var(--forest)"
               color="var(--paper)"
               _hover={{ bg: 'var(--forest-deep)' }}
-              onClick={saveNotes}
+              onClick={saveAppointment}
+              isLoading={savingAppt}
+              loadingText="Speichern…"
+              isDisabled={!apptDate}
             >
-              Speichern
+              Termin speichern
             </Button>
           </ModalFooter>
         </ModalContent>

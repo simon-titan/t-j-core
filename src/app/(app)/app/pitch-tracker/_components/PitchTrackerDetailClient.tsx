@@ -68,6 +68,25 @@ export function PitchTrackerDetailClient({
     setPitches(prev => prev.filter(p => p.id !== id));
   }
 
+  function handleNotesUpdated(id: string, notes: string | null) {
+    setPitches(prev => prev.map(p => p.id === id ? { ...p, notes } : p));
+  }
+
+  function handleAppointmentCreated(
+    pitchId: string,
+    leadId: string,
+    appt: { id: string; scheduled_at: string; status: string }
+  ) {
+    setPitches(prev => prev.map(p => {
+      if (p.id !== pitchId) return p;
+      const existingLead = p.leads?.[0];
+      const lead = existingLead
+        ? { ...existingLead, appointments: [appt] }
+        : { id: leadId, status: 'contacted' as const, appointments: [appt] };
+      return { ...p, leads: [lead] };
+    }));
+  }
+
   function handlePitchCreated(newPitch: PitchWithRelations) {
     setPitches(prev => [newPitch, ...prev]);
   }
@@ -266,6 +285,10 @@ export function PitchTrackerDetailClient({
               onStatusChange={handleStatusChange}
               onLeadCreated={handleLeadCreated}
               onDelete={handleDeletePitch}
+              onNotesUpdated={handleNotesUpdated}
+              onAppointmentCreated={handleAppointmentCreated}
+              userId={userId}
+              orgId={orgId}
               showSentBy={true}
             />
           </TabPanel>

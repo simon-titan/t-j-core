@@ -171,9 +171,11 @@ export interface Notification {
 
 // ─── Onboarding ──────────────────────────────────────────────────────────────
 
-export type OnboardingModuleType = 'workbook' | 'reference';
+export type OnboardingModuleType = 'workbook' | 'reference' | 'script';
 export type OnboardingQuestionType = 'textarea' | 'text' | 'checkbox_group';
 export type OnboardingVisibility = 'private' | 'team';
+export type ScriptStepType = 'group_header' | 'step' | 'substep' | 'objection';
+export type ScriptCallGroup = 'setting' | 'closing';
 
 export interface OnboardingModule {
   id:          string;
@@ -251,6 +253,20 @@ export interface UserPitchScript {
   updated_at:  string;
 }
 
+export interface ScriptTemplateStep {
+  id:          string;
+  module_slug: string;
+  step_number: string;
+  title:       string;
+  step_type:   ScriptStepType;
+  body:        string | null;
+  bullets:     string[] | null;
+  call_group:  ScriptCallGroup | null;
+  order_index: number;
+  created_at:  string;
+  updated_at:  string;
+}
+
 type R = [];
 
 // Supabase Database type for generic client
@@ -276,6 +292,7 @@ export type Database = {
       onboarding_admin_notes: { Row: OnboardingAdminNote; Insert: Partial<OnboardingAdminNote>; Update: Partial<OnboardingAdminNote>; Relationships: R };
       onboarding_examples:    { Row: OnboardingExample;   Insert: Partial<OnboardingExample>;   Update: Partial<OnboardingExample>;   Relationships: R };
       user_pitch_scripts:     { Row: UserPitchScript;     Insert: Partial<UserPitchScript>;     Update: Partial<UserPitchScript>;     Relationships: R };
+      script_template_steps:  { Row: ScriptTemplateStep;  Insert: Partial<ScriptTemplateStep>;  Update: Partial<ScriptTemplateStep>;  Relationships: R };
     };
     Views:    { [_ in never]: never };
     Functions:{ [_ in never]: never };

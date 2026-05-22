@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody,
   ModalFooter, ModalCloseButton,
-  VStack, HStack, FormControl, FormLabel, Input,
+  VStack, FormControl, FormLabel, Input,
   Textarea, Select, Button, Text,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
@@ -24,8 +24,7 @@ interface Props {
 }
 
 interface FormState {
-  firstName:   string;
-  lastName:    string;
+  name:        string;
   linkedinUrl: string;
   templateId:  string;
   message:     string;
@@ -33,8 +32,7 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-  firstName:   '',
-  lastName:    '',
+  name:        '',
   linkedinUrl: '',
   templateId:  '',
   message:     '',
@@ -73,39 +71,47 @@ export function NewPitchModal({ isOpen, onClose, templates, userId, orgId, onCre
   }
 
   async function handleSubmit() {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.linkedinUrl.trim()) {
-      setError('Vorname, Nachname und LinkedIn URL sind erforderlich.');
+    if (!form.name.trim()) {
+      setError('Name ist erforderlich.');
       return;
     }
     setError(null);
     setLoading(true);
 
+    const nameParts  = form.name.trim().split(/\s+/);
+    const first_name = nameParts[0] ?? '';
+    const last_name  = nameParts.slice(1).join(' ');
+    const linkedinUrl = form.linkedinUrl.trim();
+
     try {
-      // 1. Upsert prospect by linkedin_url
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: prospectData, error: prospectErr } = await (supabase
-        .from('prospects') as any)
-        .upsert(
-          {
-            organization_id: orgId,
-            first_name:      form.firstName.trim(),
-            last_name:       form.lastName.trim(),
-            linkedin_url:    form.linkedinUrl.trim(),
-          },
-          { onConflict: 'linkedin_url', ignoreDuplicates: false }
-        )
-        .select('id')
-        .single();
+      let prospectId: string;
 
-      if (prospectErr || !prospectData) throw prospectErr ?? new Error('Prospect konnte nicht angelegt werden.');
+      if (linkedinUrl) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: prospectData, error: prospectErr } = await (supabase.from('prospects') as any)
+          .upsert(
+            { organization_id: orgId, first_name, last_name, linkedin_url: linkedinUrl },
+            { onConflict: 'linkedin_url', ignoreDuplicates: false }
+          )
+          .select('id')
+          .single();
+        if (prospectErr || !prospectData) throw prospectErr ?? new Error('Prospect konnte nicht angelegt werden.');
+        prospectId = prospectData.id;
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: prospectData, error: prospectErr } = await (supabase.from('prospects') as any)
+          .insert({ organization_id: orgId, first_name, last_name, linkedin_url: null })
+          .select('id')
+          .single();
+        if (prospectErr || !prospectData) throw prospectErr ?? new Error('Prospect konnte nicht angelegt werden.');
+        prospectId = prospectData.id;
+      }
 
-      // 2. Create pitch
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: pitchData, error: pitchErr } = await (supabase
-        .from('pitches') as any)
+      const { data: pitchData, error: pitchErr } = await (supabase.from('pitches') as any)
         .insert({
           organization_id: orgId,
-          prospect_id:     prospectData.id,
+          prospect_id:     prospectId,
           template_id:     form.templateId || null,
           sent_by:         userId,
           status:          'sent',
@@ -117,7 +123,6 @@ export function NewPitchModal({ isOpen, onClose, templates, userId, orgId, onCre
 
       if (pitchErr || !pitchData) throw pitchErr ?? new Error('Pitch konnte nicht angelegt werden.');
 
-      // 3. Create 3 follow-up slots
       const today = new Date();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('followups') as any).insert([
@@ -177,31 +182,20 @@ export function NewPitchModal({ isOpen, onClose, templates, userId, orgId, onCre
 
         <ModalBody pt={4} pb={2}>
           <VStack spacing={4} align="stretch">
-            {/* Name row */}
-            <HStack spacing={3}>
-              <FormControl isRequired>
-                <FormLabel {...labelStyles}>Vorname</FormLabel>
-                <Input
-                  {...inputStyles}
-                  value={form.firstName}
-                  onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
-                  placeholder="Anna"
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel {...labelStyles}>Nachname</FormLabel>
-                <Input
-                  {...inputStyles}
-                  value={form.lastName}
-                  onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-                  placeholder="Schmidt"
-                />
-              </FormControl>
-            </HStack>
+            {/* Name */}
+            <FormControl isRequired>
+              <FormLabel {...labelStyles}>Name</FormLabel>
+              <Input
+                {...inputStyles}
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Anna Schmidt"
+              />
+            </FormControl>
 
             {/* LinkedIn URL */}
-            <FormControl isRequired>
-              <FormLabel {...labelStyles}>LinkedIn URL</FormLabel>
+            <FormControl>
+              <FormLabel {...labelStyles}>LinkedIn URL (optional)</FormLabel>
               <Input
                 {...inputStyles}
                 type="url"
