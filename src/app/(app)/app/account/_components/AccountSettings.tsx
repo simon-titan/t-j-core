@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Text,
@@ -89,10 +89,22 @@ export function AccountSettings({ email, fullName }: Props) {
   const emailSame   = newEmail.trim().toLowerCase() === email.toLowerCase();
   const canSaveEmail = emailValid && !emailSame && !savingEmail;
 
+  // Show success after returning from the email-change confirmation link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('email_changed') === '1') {
+      t.success('E-Mail-Adresse erfolgreich geändert');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
   async function handleEmailSave() {
     if (!canSaveEmail) return;
     setSavingEmail(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    const { error } = await supabase.auth.updateUser(
+      { email: newEmail.trim() },
+      { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    );
     setSavingEmail(false);
     if (error) {
       t.error(error.message ?? 'E-Mail konnte nicht geändert werden');
