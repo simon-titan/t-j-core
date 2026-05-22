@@ -13,7 +13,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, List, CalendarDays, CheckSquare, Square } from 'lucide-react';
+import { LayoutGrid, List, CalendarDays, CheckSquare, Square, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { t } from '@/lib/toast';
 import type {
@@ -38,6 +38,7 @@ import { CalendarView } from './CalendarView';
 import { BulkActionBar } from './BulkActionBar';
 import { RescheduleModal } from './RescheduleModal';
 import { DetailPanel } from './DetailPanel';
+import { NewLeadModal } from './NewLeadModal';
 
 const columnStaggerVariants = {
   hidden: {},
@@ -83,6 +84,11 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
   const [selectedLead, setSelectedLead] = useState<KanbanLead | null>(null);
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const [newLeadOpen, setNewLeadOpen] = useState(false);
+
+  const handleLeadCreated = useCallback((lead: KanbanLead) => {
+    setLeads((prev) => [lead, ...prev]);
+  }, []);
 
   useEffect(() => {
     const linkedLeadId = searchParams.get('lead');
@@ -367,6 +373,30 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
           </Box>
 
           <HStack spacing="var(--space-3)" align="center">
+            {/* Neuer Lead */}
+            <Box
+              as="button"
+              display="flex"
+              alignItems="center"
+              gap="6px"
+              px="12px"
+              py="6px"
+              borderRadius="var(--radius-2)"
+              bg="var(--leaf)"
+              color="var(--forest-deep)"
+              cursor="pointer"
+              fontSize="12px"
+              fontFamily="var(--font-sans)"
+              fontWeight={600}
+              border="none"
+              _hover={{ bg: 'rgba(74,124,92,0.85)', color: 'var(--paper)' }}
+              transition="all 150ms ease"
+              onClick={() => setNewLeadOpen(true)}
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              <Box as="span" display={{ base: 'none', md: 'inline' }}>Neuer Lead</Box>
+            </Box>
+
             {/* View switcher */}
             <HStack
               spacing="2px"
@@ -613,6 +643,15 @@ export function KanbanBoard({ initialLeads, profiles, userId, orgId }: Props) {
           />
         )}
       </AnimatePresence>
+
+      {/* ── New Lead Modal ── */}
+      <NewLeadModal
+        isOpen={newLeadOpen}
+        onClose={() => setNewLeadOpen(false)}
+        userId={userId}
+        orgId={orgId}
+        onCreated={handleLeadCreated}
+      />
 
       {/* ── Detail Panel ── */}
       <AnimatePresence>

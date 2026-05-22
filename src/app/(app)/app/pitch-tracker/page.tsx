@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { Profile } from '@/lib/types/database';
-import type { TemplateWithStats, OrgMember } from './_components/types';
+import type { Profile, PitchTrackerDefault } from '@/lib/types/database';
+import type { TemplateWithStats, OrgMember, DailyStatRow, LightRawData } from './_components/types';
 import { PitchTrackerOverviewClient } from './_components/PitchTrackerOverviewClient';
 
 export const metadata: Metadata = {
@@ -25,7 +25,17 @@ export default async function PitchTrackerPage() {
 
   const orgId = profile.organization_id;
 
-  const [templatesRes, noTemplateRes, membersRes, followupsRes] = await Promise.all([
+  const [
+    templatesRes,
+    noTemplateRes,
+    membersRes,
+    followupsRes,
+    myPitchesRes,
+    myFollowupsRes,
+    myAppointmentsRes,
+    myWonLeadsRes,
+    manualStatsRes,
+  ] = await Promise.all([
     // Templates + embedded pitch stats (incl. followup statuses) for the entire org
     supabase
       .from('pitch_templates')
@@ -52,12 +62,51 @@ export default async function PitchTrackerPage() {
       .select('id')
       .eq('assigned_to', user.id)
       .eq('status', 'pending'),
+
+    // ── Light view (auto): current user's own raw data ──
+    supabase
+      .from('pitches')
+      .select('sent_at, answered_at')
+      .eq('sent_by', user.id),
+
+    supabase
+      .from('followups')
+      .select('status, sent_at')
+      .eq('assigned_to', user.id)
+      .eq('status', 'sent'),
+
+    supabase
+      .from('appointments')
+      .select('created_at')
+      .eq('assigned_to', user.id),
+
+    supabase
+      .from('leads')
+      .select('updated_at')
+      .eq('assigned_to', user.id)
+      .eq('status', 'won'),
+
+    // ── Light view (manual): current user's stored daily stats ──
+    supabase
+      .from('pitch_tracker_daily_stats')
+      .select('id, entry_date, messages_sent, followups_sent, replies_received, appointments_set, closings')
+      .eq('user_id', user.id)
+      .order('entry_date', { ascending: false }),
   ]);
 
   const templates         = (templatesRes.data   ?? []) as unknown as TemplateWithStats[];
   const noTemplatePitches = (noTemplateRes.data   ?? []) as Array<{ id: string; status: 'sent' | 'delivered' | 'answered' | 'ignored' | 'bounced'; sent_at: string; sent_by: string; leads: Array<{ id: string }> }>;
   const members           = (membersRes.data      ?? []) as OrgMember[];
   const openFollowups     = (followupsRes.data    ?? []).length;
+
+  const lightRawData: LightRawData = {
+    pitches:      (myPitchesRes.data      ?? []) as LightRawData['pitches'],
+    followups:    (myFollowupsRes.data    ?? []) as LightRawData['followups'],
+    appointments: (myAppointmentsRes.data ?? []) as LightRawData['appointments'],
+    wonLeads:     (myWonLeadsRes.data     ?? []) as LightRawData['wonLeads'],
+  };
+  const manualStats = (manualStatsRes.data ?? []) as DailyStatRow[];
+  const pitchTrackerDefault = (profile.pitch_tracker_default ?? 'detailed') as PitchTrackerDefault;
 
   return (
     <PitchTrackerOverviewClient
@@ -67,6 +116,9 @@ export default async function PitchTrackerPage() {
       openFollowups={openFollowups}
       userId={user.id}
       orgId={orgId}
+      pitchTrackerDefault={pitchTrackerDefault}
+      lightRawData={lightRawData}
+      manualStats={manualStats}
     />
   );
 }
